@@ -3,8 +3,8 @@ extends Control
 ## Developer harness: shows one client screen fed by the real server-side rules
 ## (a local RoomRegistry, no sockets), so a screen can be launched and looked at
 ## directly. Pick the state with `-- --state=<name>`:
-## connect, lobby, turn, forced, target, challenge, block, loss, exchange,
-## exiled, over, result.
+## gallery, connect, lobby, turn, forced, target, challenge, block, loss,
+## exchange, exiled, over, result.
 
 const SEED: int = 5
 
@@ -15,10 +15,7 @@ func _ready() -> void:
 	theme = UiKit.build_theme()
 	UiKit.fit_scale(get_window())
 	get_window().size_changed.connect(func() -> void: UiKit.fit_scale(get_window()))
-	var backdrop := ColorRect.new()
-	backdrop.color = UiKit.BACKGROUND
-	backdrop.set_anchors_preset(Control.PRESET_FULL_RECT)
-	add_child(backdrop)
+	add_child(SceneBackdrop.new())
 
 	var rng := RandomNumberGenerator.new()
 	rng.seed = SEED
@@ -29,6 +26,10 @@ func _ready() -> void:
 	_registry.handle(3, {"type": "join_room", "code": code, "name": "Caio"})
 
 	var state: String = _state_from_args()
+	if state == "gallery":
+		add_child(_gallery())
+		_capture_if_requested()
+		return
 	if state == "lobby" or state == "connect":
 		var lobby := LobbyScreen.new()
 		add_child(lobby)
@@ -54,6 +55,94 @@ func _ready() -> void:
 		table._selected_action = RulesConfig.EXTORQUIR
 		table._render()
 	_capture_if_requested()
+
+
+## Every visual building block side by side: the five cards (plus back, lost,
+## glowing and tilted), the six avatars with their rings, coins, type and colors.
+func _gallery() -> Control:
+	var scroll := ScrollContainer.new()
+	scroll.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	var margin := MarginContainer.new()
+	margin.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	for side in ["left", "right", "top", "bottom"]:
+		margin.add_theme_constant_override("margin_" + side, 18)
+	scroll.add_child(margin)
+	var column := VBoxContainer.new()
+	column.add_theme_constant_override("separation", 14)
+	margin.add_child(column)
+
+	column.add_child(UiKit.label("Fundação visual", 30, UiKit.INK, true))
+	column.add_child(UiKit.label("Cartas", 18, UiKit.MUTED))
+	var cards := HFlowContainer.new()
+	cards.add_theme_constant_override("h_separation", 14)
+	cards.add_theme_constant_override("v_separation", 14)
+	column.add_child(cards)
+	for character: String in UiKit.CARD_STYLE:
+		cards.add_child(CardView.new(character, 150))
+	cards.add_child(CardView.new("", 150))
+	var lost := CardView.new("condessa", 150)
+	lost.lost = true
+	cards.add_child(lost)
+	var halo := CardView.new("assassino", 150)
+	halo.glow = Color(UiKit.DANGER, 0.55)
+	cards.add_child(halo)
+	# Containers reset rotation, so a tilted card sits in a fixed-size holder.
+	var holder := Control.new()
+	holder.custom_minimum_size = Vector2(170, 215)
+	var tilted := CardView.new("duque", 150)
+	tilted.position = Vector2(10, 4)
+	tilted.rotation_degrees = -6.0
+	holder.add_child(tilted)
+	cards.add_child(holder)
+
+	column.add_child(UiKit.label("Avatares", 18, UiKit.MUTED))
+	var avatars := HFlowContainer.new()
+	avatars.add_theme_constant_override("h_separation", 16)
+	column.add_child(avatars)
+	var rings: Array = [AvatarView.Ring.PLAIN, AvatarView.Ring.TURN, AvatarView.Ring.CLAIM,
+			AvatarView.Ring.TARGET, AvatarView.Ring.PLAIN, AvatarView.Ring.PLAIN]
+	for index in range(AvatarView.NAMES.size()):
+		var avatar := AvatarView.new(index, 76)
+		avatar.ring = rings[index]
+		avatar.dimmed = index == 4
+		avatars.add_child(avatar)
+
+	column.add_child(UiKit.label("Moedas e tipografia", 18, UiKit.MUTED))
+	var coins := HFlowContainer.new()
+	coins.add_theme_constant_override("h_separation", 12)
+	column.add_child(coins)
+	coins.add_child(CoinPill.new(6))
+	coins.add_child(CoinPill.new(32, "Tesouro"))
+	coins.add_child(CoinPill.new(9, "Baralho"))
+	for path: String in ["res://assets/arte/design/moeda_ouro.svg", "res://assets/arte/design/moeda_prata.svg"]:
+		var coin := TextureRect.new()
+		coin.texture = load(path)
+		coin.custom_minimum_size = Vector2(56, 56)
+		coin.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		coin.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		coins.add_child(coin)
+	column.add_child(UiKit.label("SUA VEZ", 34, UiKit.INK, true))
+	column.add_child(UiKit.label("Escolha uma ação — Source Sans 3", 22, UiKit.INK))
+	var buttons := HFlowContainer.new()
+	buttons.add_theme_constant_override("h_separation", 12)
+	column.add_child(buttons)
+	buttons.add_child(UiKit.button("Renda"))
+	var disabled := UiKit.button("Golpe de Estado")
+	disabled.disabled = true
+	buttons.add_child(disabled)
+	var swatches := HFlowContainer.new()
+	swatches.add_theme_constant_override("h_separation", 8)
+	column.add_child(swatches)
+	for swatch: Array in [["INK", UiKit.INK], ["GOLD", UiKit.GOLD], ["BORDER", UiKit.BORDER], ["BACKGROUND", UiKit.BACKGROUND],
+			["PANEL_RAISED", UiKit.PANEL_RAISED], ["MUTED", UiKit.MUTED], ["DANGER", UiKit.DANGER]]:
+		var chip := UiKit.panel(swatch[1], UiKit.BORDER, 1)
+		chip.custom_minimum_size = Vector2(110, 40)
+		var tag := UiKit.label(swatch[0], 12, UiKit.INK if swatch[1].get_luminance() > 0.45 else Color.WHITE)
+		tag.autowrap_mode = TextServer.AUTOWRAP_OFF
+		chip.add_child(tag)
+		swatches.add_child(chip)
+	return scroll
 
 
 ## With `-- --shot=<path>`, saves the viewport (at the window's size) to that

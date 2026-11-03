@@ -43,7 +43,7 @@ func _ready() -> void:
 
 	_header = UiKit.label("", 24, UiKit.MUTED)
 	column.add_child(_header)
-	_banner = UiKit.label("", 28, UiKit.GOLD)
+	_banner = UiKit.label("", 28, UiKit.GOLD_TEXT, true)
 	column.add_child(_banner)
 	_players_row = HFlowContainer.new()
 	_players_row.add_theme_constant_override("h_separation", 12)
@@ -150,7 +150,7 @@ func _render_players() -> void:
 		column.add_theme_constant_override("separation", 6)
 		panel.add_child(column)
 		var title: String = player.name + (UiText.YOU_SUFFIX if player.id == _me() else "")
-		column.add_child(UiKit.label(title, 22, UiKit.GOLD if is_turn else UiKit.TEXT))
+		column.add_child(UiKit.label(title, 22, UiKit.GOLD_TEXT if is_turn else UiKit.TEXT))
 		column.add_child(UiKit.label(UiText.COINS % player.coins, 20, UiKit.MUTED))
 		if not player.alive:
 			column.add_child(UiKit.label(UiText.EXILED, 18, UiKit.DANGER))

@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 250" width="260" height="250">
+<rect width="260" height="250" fill="#27695A"/>
+<polygon points="0,0 110,0 0,110" fill="#317A68"/>
+<polygon points="260,0 260,130 150,0" fill="#1E5448"/>
+<polygon points="0,250 18,192 88,166 172,166 242,192 260,250" fill="#12362F"/>
+<polygon points="18,192 88,166 68,250 0,250" fill="#1A4A3F"/>
+<polygon points="242,192 172,166 192,250 260,250" fill="#0C2822"/>
+<polygon points="38,190 72,174 200,250 150,250" fill="#B03A2E"/>
+<polygon points="72,174 200,250 188,250 62,182" fill="#8E2C22"/>
+<polygon points="112,146 148,146 152,172 130,186 108,172" fill="#8F5C3E"/>
+<polygon points="112,146 130,152 130,186 108,172" fill="#7A4B30"/>
+<polygon points="76,172 96,158 92,196" fill="#D8CFB4"/>
+<polygon points="96,158 130,168 92,196" fill="#F4EEDC"/>
+<polygon points="130,168 130,184 92,196" fill="#E4DAC0"/>
+<polygon points="184,172 164,158 168,196" fill="#D8CFB4"/>
+<polygon points="164,158 130,168 168,196" fill="#E4DAC0"/>
+<polygon points="130,168 130,184 168,196" fill="#F4EEDC"/>
+<polygon points="86,90 80,110 88,124 92,100" fill="#2A1B14"/>
+<polygon points="174,90 180,110 172,124 168,100" fill="#1B120D"/>
+<polygon points="92,86 130,86 130,170 102,156 86,122" fill="#A06A48"/>
+<polygon points="130,86 168,86 174,122 158,156 130,170" fill="#8F5C3E"/>
+<polygon points="100,138 130,138 130,172 102,156" fill="#3A281E"/>
+<polygon points="130,138 160,138 158,156 130,172" fill="#2A1B14"/>
+<polygon points="130,142 108,140 100,150 118,148 130,148" fill="#1B120D"/>
+<polygon points="130,142 152,140 160,150 142,148 130,148" fill="#1B120D"/>
+<polygon points="120,154 140,154 138,158 122,158" fill="#C98E6B"/>
+<polygon points="130,118 136,134 130,138 124,134" fill="#7A4B30"/>
+<polygon points="100,102 122,104 122,107 100,106" fill="#1B120D"/>
+<polygon points="160,102 138,104 138,107 160,106" fill="#1B120D"/>
+<polygon points="106,115 118,114 118,118 106,119" fill="#1B120D"/>
+<polygon points="142,114 154,115 154,119 142,118" fill="#1B120D"/>
+<circle cx="112" cy="116" r="11" fill="#F4EEDC" fill-opacity="0.25" stroke="#E0B24A" stroke-width="3"/>
+<circle cx="148" cy="116" r="11" fill="#F4EEDC" fill-opacity="0.25" stroke="#E0B24A" stroke-width="3"/>
+<path d="M123 116 H137" stroke="#E0B24A" stroke-width="3"/>
+<polygon points="78,86 94,56 130,44 130,90 80,92" fill="#1A4A3F"/>
+<polygon points="130,44 170,52 186,80 180,90 130,90" fill="#0C2822"/>
+<polygon points="80,84 180,84 182,92 80,92" fill="#E0B24A"/>
+<polygon points="168,54 196,36 188,70" fill="#F4EEDC"/>
+</svg>

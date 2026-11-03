@@ -1,0 +1,10 @@
+Reviewed-Content-Hash: assets/fonts/Cinzel-Variable.ttf d218a0b9c8879fd5a708872cc0ef357e507b35ca
+Reviewed-Content-Hash: assets/fonts/SourceSans3-Variable.ttf d259aa494fe7117141a2752a998a52c172bbd42b
+Reviewed-Content-Hash: src/client/ui_kit.gd 6701e6b8c47cfba91e566ae7fc8cc5b69bedd768
+Reviewed-Content-Hash: src/client/ui_text.gd 91722af70891020b18629812146fd0c7367674d7
+Reviewed-Content-Hash: src/client/card_view.gd b38c691ab3b42a254ecfcc33738c4937448403ac
+Reviewed-Content-Hash: src/client/avatar_view.gd f05471152f456cfce4db1fc7692d2c7dea173176
+Reviewed-Content-Hash: src/client/scene_backdrop.gd 5366743e34a9a39881c0444838946fa33773fb6e
+Reviewed-Content-Hash: src/client/coin_pill.gd f9ca729130ef1ffd5c61e889545d812e79965f1b
+Reviewed-Content-Hash: src/client/preview.gd 0b1c83cf3564c2665530fe65b9a0399b3e7bc3c0
+Reviewed-Content-Hash: tools/extract_design_assets.py 2f56b8bd8d46d10ce9bc556be50a026d35213063

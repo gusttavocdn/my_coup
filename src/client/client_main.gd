@@ -16,10 +16,7 @@ func _ready() -> void:
 	theme = UiKit.build_theme()
 	UiKit.fit_scale(get_window())
 	get_window().size_changed.connect(func() -> void: UiKit.fit_scale(get_window()))
-	var backdrop := ColorRect.new()
-	backdrop.color = UiKit.BACKGROUND
-	backdrop.set_anchors_preset(Control.PRESET_FULL_RECT)
-	add_child(backdrop)
+	add_child(SceneBackdrop.new())
 
 	_net = ClientNet.new()
 	_net.name = "GameServer"

@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 900" width="1440" height="900">
+<defs><radialGradient id="vg" cx="50%" cy="45%" r="75%"><stop offset="50%" stop-color="#B9B2D0" stop-opacity="0.0"/><stop offset="100%" stop-color="#B9B2D0" stop-opacity="0.425"/></radialGradient></defs>
+<rect width="1440" height="900" fill="#FFFFFF"/>
+<circle cx="1130" cy="190" r="110" fill="#F1EEF7" opacity="0.5"/>
+<circle cx="1130" cy="190" r="72" fill="#E8E3F2" opacity="0.5"/>
+<polygon points="960,640 960,470 1080,380 1260,470 1260,640" fill="#ECE8F4"/>
+<polygon points="1200,640 1200,420 1250,330 1300,420 1300,640" fill="#E2DDED"/>
+<polygon points="1250,640 1250,500 1440,500 1440,640" fill="#ECE8F4"/>
+<rect x="1000" y="510" width="22" height="34" fill="#E0B24A" opacity="0.5"/>
+<rect x="1060" y="510" width="22" height="34" fill="#E0B24A" opacity="0.16"/>
+<rect x="1220" y="440" width="16" height="26" fill="#E0B24A" opacity="0.38"/>
+<g stroke="#E2DDED" stroke-width="12" stroke-linecap="round" fill="none"><path d="M-20 420 Q100 380 170 300 Q210 250 290 230"/><path d="M110 360 Q90 290 150 240"/><path d="M170 300 Q250 310 310 280"/><path d="M60 400 Q40 330 20 300"/></g>
+<ellipse cx="300" cy="660" rx="420" ry="44" fill="#D8D4E0" opacity="0.16"/>
+<ellipse cx="1100" cy="780" rx="520" ry="50" fill="#D8D4E0" opacity="0.16"/>
+<path d="M0 780 Q720 720 1440 790 V900 H0 Z" fill="#F4F1F9"/>
+<rect width="1440" height="900" fill="url(#vg)"/>
+</svg>

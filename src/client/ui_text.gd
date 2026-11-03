@@ -11,6 +11,16 @@ const CHARACTER_NAMES: Dictionary = {
 	"condessa": "Condessa",
 }
 
+## Text of each card face: [label, [lines]] for the action row and the block row.
+const CARD_TEXT: Dictionary = {
+	"duque": {"action": ["TAXAR", ["receba 3 moedas"]], "block": ["BLOQUEIA", ["Ajuda Externa"]]},
+	"assassino": {"action": ["ASSASSINAR", ["pague 3 moedas: o alvo", "perde 1 influência"]],
+			"block": ["BLOQUEADO POR", ["Condessa"]]},
+	"capitao": {"action": ["EXTORQUIR", ["pegue 2 moedas de outro", "jogador"]], "block": ["BLOQUEIA", ["Extorsão"]]},
+	"embaixador": {"action": ["TROCAR", ["compre 2 cartas e devolva 2"]], "block": ["BLOQUEIA", ["Extorsão"]]},
+	"condessa": {"action": ["AÇÃO", ["nenhuma ação própria"]], "block": ["BLOQUEIA", ["Assassinato"]]},
+}
+
 const ACTION_NAMES: Dictionary = {
 	"renda": "Renda",
 	"ajuda_externa": "Ajuda Externa",

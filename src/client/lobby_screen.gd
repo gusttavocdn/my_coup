@@ -30,7 +30,7 @@ func _ready() -> void:
 	var column := VBoxContainer.new()
 	column.add_theme_constant_override("separation", 14)
 	card.add_child(column)
-	var title := UiKit.label(UiText.TITLE, 40, UiKit.GOLD)
+	var title := UiKit.label(UiText.TITLE, 40, UiKit.GOLD_TEXT, true)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	column.add_child(title)
 
@@ -52,7 +52,7 @@ func _ready() -> void:
 	_room_box.add_theme_constant_override("separation", 10)
 	_room_box.visible = false
 	column.add_child(_room_box)
-	_room_title = UiKit.label("", 30, UiKit.GOLD)
+	_room_title = UiKit.label("", 30, UiKit.GOLD_TEXT, true)
 	_room_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_room_box.add_child(_room_title)
 	_members = VBoxContainer.new()

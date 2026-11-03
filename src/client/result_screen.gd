@@ -27,7 +27,7 @@ func _ready() -> void:
 	margin.add_child(column)
 
 	column.add_child(UiKit.label(UiText.RESULT_TITLE, 24, UiKit.MUTED))
-	_winner = UiKit.label("", 34, UiKit.GOLD)
+	_winner = UiKit.label("", 34, UiKit.GOLD_TEXT, true)
 	column.add_child(_winner)
 	_rows = VBoxContainer.new()
 	_rows.add_theme_constant_override("separation", 10)
@@ -63,7 +63,7 @@ func show_result(view: Dictionary) -> void:
 			title += UiText.YOU_SUFFIX
 		if is_winner:
 			title += UiText.WINNER_SUFFIX
-		var name_label := UiKit.label(title, 24, UiKit.GOLD if is_winner else UiKit.TEXT)
+		var name_label := UiKit.label(title, 24, UiKit.GOLD_TEXT if is_winner else UiKit.TEXT)
 		name_label.custom_minimum_size = Vector2(260, 0)
 		line.add_child(name_label)
 		var cards := HBoxContainer.new()

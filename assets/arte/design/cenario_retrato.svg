@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 390 844" width="390" height="844">
+<defs><radialGradient id="vg" cx="50%" cy="45%" r="75%"><stop offset="55%" stop-color="#B9B2D0" stop-opacity="0.0"/><stop offset="100%" stop-color="#B9B2D0" stop-opacity="0.4"/></radialGradient></defs>
+<rect width="390" height="844" fill="#FFFFFF"/>
+<circle cx="300" cy="200" r="74" fill="#F1EEF7" opacity="0.5"/>
+<circle cx="300" cy="200" r="48" fill="#E8E3F2" opacity="0.5"/>
+<polygon points="236,540 236,430 300,368 390,430 390,540" fill="#ECE8F4"/>
+<polygon points="350,540 350,400 372,346 394,400 394,540" fill="#E2DDED"/>
+<rect x="256" y="458" width="14" height="22" fill="#E0B24A" opacity="0.55"/>
+<rect x="290" y="458" width="14" height="22" fill="#E0B24A" opacity="0.18"/>
+<rect x="364" y="420" width="10" height="16" fill="#E0B24A" opacity="0.4"/>
+<g stroke="#E2DDED" stroke-width="7" stroke-linecap="round" fill="none"><path d="M-10 350 Q50 320 90 260 Q110 230 150 220"/><path d="M60 300 Q50 250 80 210"/><path d="M90 260 Q130 270 160 255"/></g>
+<ellipse cx="120" cy="560" rx="200" ry="30" fill="#D8D4E0" opacity="0.18"/>
+<ellipse cx="300" cy="700" rx="240" ry="36" fill="#D8D4E0" opacity="0.18"/>
+<path d="M0 750 Q200 710 390 755 V844 H0 Z" fill="#F4F1F9"/>
+<rect width="390" height="844" fill="url(#vg)"/>
+</svg>
