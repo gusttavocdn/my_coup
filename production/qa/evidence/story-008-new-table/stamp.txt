@@ -1,0 +1,9 @@
+Reviewed-Content-Hash: src/client/table_screen.gd 2daad5bcafbe3c0ae3017362f8bc0a1a42d4b31e
+Reviewed-Content-Hash: src/client/action_bar.gd 46f533d021494bb26ead3d3bca401526ffdc137d
+Reviewed-Content-Hash: src/client/opponent_strip.gd b69efd0ba6f3c6d4763c9f96dd502e6405d4f46b
+Reviewed-Content-Hash: src/client/log_panel.gd 5eaabb468e179a3230b2bf23071192656dc94165
+Reviewed-Content-Hash: src/client/rules_sheet.gd dbbd7a2fbd746063a7f8e946abecf99dc7669c8d
+Reviewed-Content-Hash: src/client/ui_kit.gd 2e1ebe0e2fb81a62ef154b6060e88f21a43117f2
+Reviewed-Content-Hash: src/client/ui_text.gd 9a36c3939e58d3f27c0b9ad5d7907222e1e546d9
+Reviewed-Content-Hash: src/client/client_main.gd a0a93c41d1b09efe32e557b907d03cb3bea68a4f
+Reviewed-Content-Hash: src/client/preview.gd 2b5602630d361a7037f742926f30bb2be4d8dcf4

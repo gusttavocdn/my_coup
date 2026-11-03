@@ -41,6 +41,7 @@ func _ready() -> void:
 	_table.visible = false
 	add_child(_table)
 	_table.intent_chosen.connect(_send_online)
+	_table.leave_requested.connect(func() -> void: _send_online({"type": "leave_room"}))
 
 	_result = ResultScreen.new()
 	_result.visible = false

@@ -3,8 +3,8 @@ extends Control
 ## Developer harness: shows one client screen fed by the real server-side rules
 ## (a local RoomRegistry, no sockets), so a screen can be launched and looked at
 ## directly. Pick the state with `-- --state=<name>`:
-## gallery, connect, lobby, turn, forced, target, challenge, block, loss,
-## exchange, exiled, over, result.
+## gallery, connect, lobby, turn, waiting, forced, target, challenge, block,
+## loss, exchange, exiled, over, result, rules, menu, log.
 
 const SEED: int = 5
 
@@ -54,6 +54,15 @@ func _ready() -> void:
 		# Same state a tap on "Extorquir" leaves behind: waiting for a target.
 		table._selected_action = RulesConfig.EXTORQUIR
 		table._render()
+	if state == "rules":
+		table.add_child(RulesSheet.rules())
+	elif state == "menu":
+		table.add_child(RulesSheet.menu())
+	elif state == "log":
+		var names: Array = []
+		for player: Dictionary in room.view_for(1).players:
+			names.append(player.name)
+		table.add_child(RulesSheet.log_sheet(["Ana usa Renda.", "Bia usa Taxas.", "Caio contesta Bia.", "Bia mostrou Duque: a contestação falhou.", "Caio perdeu Condessa."], names))
 	_capture_if_requested()
 
 
@@ -150,7 +159,7 @@ func _gallery() -> Control:
 func _capture_if_requested() -> void:
 	for argument in OS.get_cmdline_user_args():
 		if argument.begins_with("--shot="):
-			for _frame in range(8):
+			for _frame in range(14):
 				await get_tree().process_frame
 			await RenderingServer.frame_post_draw
 			get_viewport().get_texture().get_image().save_png(argument.trim_prefix("--shot="))
@@ -166,10 +175,12 @@ func _stage(state: String) -> Array:
 	room.engine.state.players[1].hand = ["capitao", "assassino"] as Array[String]
 	room.engine.state.players[2].hand = ["embaixador", "duque"] as Array[String]
 	match state:
-		"turn", "target":
+		"turn", "target", "rules", "menu", "log":
 			room.engine.state.players[0].coins = 4
 		"forced":
 			room.engine.state.players[0].coins = 10
+		"waiting":
+			_collect(events, _registry.handle(1, {"type": "action", "action": "renda"}))
 		"challenge":
 			_collect(events, _registry.handle(1, {"type": "action", "action": "renda"}))
 			_collect(events, _registry.handle(2, {"type": "action", "action": "taxas"}))

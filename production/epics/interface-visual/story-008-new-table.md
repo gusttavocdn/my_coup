@@ -1,12 +1,12 @@
 # Story 008: Mesa nova (computador e celular)
 
 > **Epic**: interface-visual
-> **Status**: Ready
+> **Status**: Complete
 > **Layer**: Presentation
 > **Type**: UI
 > **Estimate**: L
 > **Manifest Version**: N/A (minimal — no control manifest)
-> **Last Updated**: —
+> **Last Updated**: 2026-11-03
 
 ## Context
 
@@ -54,9 +54,10 @@ Measurements and spacing from `Desktop.dc.html` and `Mobile.dc.html` (copies in 
 
 ## Files
 
-- `src/client/table_screen.gd` (rewrite), `src/client/action_bar.gd`, `src/client/opponent_strip.gd`, `src/client/log_panel.gd`, `src/client/rules_sheet.gd`, `src/client/ui_text.gd`, `src/client/preview.gd`
-
----
+- `src/client/table_screen.gd` (rewrite)
+- `src/client/action_bar.gd`, `src/client/opponent_strip.gd`, `src/client/log_panel.gd`, `src/client/rules_sheet.gd`
+- `src/client/ui_kit.gd`, `src/client/ui_text.gd`, `src/client/client_main.gd`, `src/client/preview.gd`
+- `production/qa/evidence/story-008-new-table/`
 
 ## QA Test Cases
 
@@ -68,7 +69,7 @@ Measurements and spacing from `Desktop.dc.html` and `Mobile.dc.html` (copies in 
 
 **Story Type**: UI
 **Required evidence**: a retained screenshot of each screen touched, in `production/qa/evidence/story-008-new-table/`
-**Status**: [ ] Not yet created
+**Status**: [x] Captured 2026-11-03 — desktop (1280x720) and phone (540x960): turn, waiting, 10+ coins, exiled, menu, rules, log sheet, prompts
 
 ---
 
@@ -76,3 +77,10 @@ Measurements and spacing from `Desktop.dc.html` and `Mobile.dc.html` (copies in 
 
 - Depends on: `production/epics/interface-visual/story-007-visual-foundation.md`
 - Unlocks: `production/epics/interface-visual/story-009-target-selection.md`, `production/epics/interface-visual/story-011-reaction-screen.md`, `production/epics/interface-visual/story-012-influence-exchange-lobby-result.md`
+
+## Completion Notes
+**Completed**: 2026-11-03
+**Criteria**: 10/10 passing (none deferred)
+**Deviations**: Advisory — headline may wrap to 3 lines on narrow screens; 5 opponents on a narrow screen not captured. Phone evidence is a 540x960 window.
+**Test Evidence**: production/qa/evidence/story-008-new-table/ (13 screenshots, stamped; tests waived at qa.level minimal)
+**Reviewed by**: self, no independent review

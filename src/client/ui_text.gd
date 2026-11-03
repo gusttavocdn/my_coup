@@ -94,6 +94,40 @@ const WINNER_SUFFIX: String = " — vencedor"
 const BACK_TO_LOBBY: String = "Voltar ao lobby"
 
 
+const LAST_ACTION: String = "ÚLTIMA AÇÃO"
+const TREASURY: String = "Tesouro"
+const DECK: String = "Baralho"
+const YOUR_COINS_TITLE: String = "SUAS MOEDAS"
+const COUP_HINT: String = "Golpe de Estado a partir de %d"
+const LOG_TITLE: String = "REGISTRO"
+const LOG_BUTTON: String = "Registro"
+const NO_LOG_YET: String = "Nada aconteceu ainda."
+const MENU_TITLE: String = "Menu"
+const RULES_TITLE: String = "Regras"
+const CLOSE: String = "Fechar"
+const CONTINUE: String = "Continuar"
+const LEAVE_MATCH: String = "Sair da partida"
+const TURN_OF: String = "VEZ DE %s"
+const YOUR_TURN_TITLE: String = "SUA VEZ"
+const CHOOSE_ACTION_SUB: String = "Escolha uma ação"
+const YOUR_ANSWER_TITLE: String = "SUA RESPOSTA"
+const SPECTATOR_TITLE: String = "EXILADO"
+const WAITING_SUB: String = "Aguardando..."
+const MATCH_STARTED: String = "A partida começou"
+
+## Short medallion captions for narrow screens.
+const ACTION_SHORT: Dictionary = {"ajuda_externa": "Ajuda", "golpe": "Golpe"}
+
+## Lines of the rules sheet (the character rows come from CARD_TEXT).
+const RULES_LINES: Array[String] = [
+	"Seja o último jogador com influência.",
+	"Renda: pegue 1 moeda.",
+	"Ajuda Externa: pegue 2 moedas (o Duque bloqueia).",
+	"Golpe de Estado: pague 7; o alvo perde 1 influência. Com 10 moedas ou mais é obrigatório.",
+	"Qualquer carta declarada pode ser contestada: quem perde a contestação perde 1 influência.",
+]
+
+
 static func character(id: String) -> String:
 	return CHARACTER_NAMES.get(id, id)
 

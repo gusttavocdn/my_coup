@@ -1,80 +1,44 @@
 class_name TableScreen
 extends Control
-## The match table: every player, my own cards, the action menu or the prompt
-## the match is waiting on, and the event log. It renders the per-player view
-## the server sends (Room.view_for) and only emits intents; it holds no rules.
+## The match table of the design: an immersive scene with a minimal HUD. It
+## renders the per-player view the server sends (Room.view_for) and only emits
+## intents; it holds no rules. Wide windows follow the desktop board (1440x900),
+## narrow ones the phone board (390x844); both are laid out from the same pieces
+## and rebuilt on every update or resize.
+##
+## Response, loss and exchange prompts still use plain buttons in a card at the
+## bottom (a stopgap until the reaction and loss screens replace them).
 
 signal intent_chosen(intent: Dictionary)
+signal leave_requested
 
 ## Beyond this many log lines the oldest are dropped.
 const MAX_LOG_LINES: int = 60
+## Windows narrower than this use the phone layout.
+const NARROW_WIDTH: float = 900.0
+const WIDE_DESIGN: Vector2 = Vector2(1440, 900)
+const NARROW_DESIGN: Vector2 = Vector2(390, 844)
 
 var _view: Dictionary = {}
 var _needs_my_answer: bool = false
 var _selected_action: String = ""
 var _exchange_picks: Array[int] = []
 var _log_lines: Array[String] = []
+var _toast_text: String = ""
+var _awaiting_server: bool = false
 
-var _header: Label
-var _banner: Label
-var _players_row: HFlowContainer
+var _stage: Control
 var _prompt_text: Label
 var _prompt_buttons: HFlowContainer
-var _hand_label: Label
-var _hand_row: HBoxContainer
-var _log: RichTextLabel
-var _toast: Label
 
 
 func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	var scroll := ScrollContainer.new()
-	scroll.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	add_child(scroll)
-	var margin := MarginContainer.new()
-	margin.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	for side in ["left", "right", "top", "bottom"]:
-		margin.add_theme_constant_override("margin_" + side, 16)
-	scroll.add_child(margin)
-	var column := VBoxContainer.new()
-	column.add_theme_constant_override("separation", 14)
-	margin.add_child(column)
-
-	_header = UiKit.label("", 24, UiKit.MUTED)
-	column.add_child(_header)
-	_banner = UiKit.label("", 28, UiKit.GOLD_TEXT, true)
-	column.add_child(_banner)
-	_players_row = HFlowContainer.new()
-	_players_row.add_theme_constant_override("h_separation", 12)
-	_players_row.add_theme_constant_override("v_separation", 12)
-	column.add_child(_players_row)
-
-	var prompt_panel := UiKit.panel(UiKit.PANEL_RAISED, UiKit.GOLD, 2)
-	column.add_child(prompt_panel)
-	var prompt_column := VBoxContainer.new()
-	prompt_column.add_theme_constant_override("separation", 10)
-	prompt_panel.add_child(prompt_column)
-	_prompt_text = UiKit.label("")
-	prompt_column.add_child(_prompt_text)
-	_prompt_buttons = HFlowContainer.new()
-	_prompt_buttons.add_theme_constant_override("h_separation", 10)
-	_prompt_buttons.add_theme_constant_override("v_separation", 10)
-	prompt_column.add_child(_prompt_buttons)
-	_toast = UiKit.label("", 20, UiKit.DANGER)
-	prompt_column.add_child(_toast)
-
-	_hand_label = UiKit.label(UiText.YOUR_CARDS, 20, UiKit.MUTED)
-	column.add_child(_hand_label)
-	_hand_row = HBoxContainer.new()
-	_hand_row.add_theme_constant_override("separation", 12)
-	column.add_child(_hand_row)
-
-	_log = RichTextLabel.new()
-	_log.fit_content = true
-	_log.scroll_active = false
-	_log.custom_minimum_size = Vector2(0, 120)
-	column.add_child(_log)
+	_stage = Control.new()
+	_stage.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_stage.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_stage)
+	resized.connect(_render)
 
 
 ## Forgets the previous match (view, log, half-made choices) before the next one.
@@ -84,18 +48,19 @@ func reset() -> void:
 	_selected_action = ""
 	_exchange_picks.clear()
 	_needs_my_answer = false
+	_toast_text = ""
 
 
-## Sets the room code shown in the header.
-func set_room_code(code: String) -> void:
-	_header.text = UiText.ROOM_CODE % code
+## Kept for the client's API; the room code is not shown on the table.
+func set_room_code(_code: String) -> void:
+	pass
 
 
 ## Renders [param view] (Room.view_for) and appends [param events] to the log.
 func apply_update(view: Dictionary, events: Array) -> void:
 	_view = view
-	_toast.text = ""
-	_toast.visible = false
+	_toast_text = ""
+	_awaiting_server = false
 	# Any update means the state moved on, so a half-made action choice is void.
 	_selected_action = ""
 	if view.phase != RulesEngine.PHASE_AWAITING_EXCHANGE:
@@ -109,155 +74,358 @@ func apply_update(view: Dictionary, events: Array) -> void:
 	_render()
 
 
-## Shows a server error code under the prompt.
+## Shows a server error code above the actions.
 func show_error(code: String) -> void:
-	_toast.text = UiText.error(code)
-	_toast.visible = true
+	_toast_text = UiText.error(code)
+	_awaiting_server = false
 	if not _view.is_empty():
 		_render()
 
 
 func _render() -> void:
-	_render_players()
-	_render_prompt()
-	_banner.text = _banner_text()
-	_render_hand()
-	_log.text = "\n".join(_log_lines)
-
-
-func _banner_text() -> String:
-	if _view.phase == RulesEngine.PHASE_GAME_OVER:
-		return UiText.GAME_OVER % _name(_view.winner)
-	if not _view.players[_me()].alive:
-		return UiText.SPECTATOR_BANNER
-	if _view.phase == RulesEngine.PHASE_AWAITING_ACTION and _view.current_player == _me():
-		return UiText.YOUR_TURN
-	if _needs_my_answer:
-		return UiText.YOUR_ANSWER
-	return UiText.WAITING_FOR % _name(_view.current_player)
-
-
-func _render_players() -> void:
-	UiKit.clear(_players_row)
-	for player: Dictionary in _view.players:
-		var is_turn: bool = player.id == _view.current_player and player.alive
-		var panel := UiKit.panel(UiKit.PANEL, UiKit.GOLD if is_turn else Color(0, 0, 0, 0), 3)
-		panel.custom_minimum_size = Vector2(200, 0)
-		if not player.alive:
-			panel.modulate = Color(1, 1, 1, 0.55)
-		_players_row.add_child(panel)
-		var column := VBoxContainer.new()
-		column.add_theme_constant_override("separation", 6)
-		panel.add_child(column)
-		var title: String = player.name + (UiText.YOU_SUFFIX if player.id == _me() else "")
-		column.add_child(UiKit.label(title, 22, UiKit.GOLD_TEXT if is_turn else UiKit.TEXT))
-		column.add_child(UiKit.label(UiText.COINS % player.coins, 20, UiKit.MUTED))
-		if not player.alive:
-			column.add_child(UiKit.label(UiText.EXILED, 18, UiKit.DANGER))
-		var cards := HBoxContainer.new()
-		cards.add_theme_constant_override("separation", 6)
-		column.add_child(cards)
-		for _hidden in range(player.influence):
-			cards.add_child(UiKit.card("", true))
-		for revealed: String in player.revealed:
-			cards.add_child(UiKit.card(revealed, true))
-
-
-func _render_hand() -> void:
-	UiKit.clear(_hand_row)
-	_hand_label.visible = not _view.you.hand.is_empty()
-	for character: String in _view.you.hand:
-		_hand_row.add_child(UiKit.card(character))
-
-
-func _render_prompt() -> void:
-	UiKit.clear(_prompt_buttons)
-	var me: int = _me()
-	var window: Dictionary = _view.window
-	var pending: Dictionary = _view.pending_action
-	if not _view.players[me].alive and _view.phase != RulesEngine.PHASE_GAME_OVER:
-		_needs_my_answer = false
-		_prompt_text.text = UiText.SPECTATING
+	if _stage == null or _view.is_empty() or size.x < 50.0:
 		return
-	var response_open: bool = not window.is_empty() and window.eligible.has(me) \
-			and not window.passed.has(me)
-	_needs_my_answer = response_open \
+	UiKit.clear(_stage)
+	var narrow: bool = size.x < NARROW_WIDTH
+	var design: Vector2 = NARROW_DESIGN if narrow else WIDE_DESIGN
+	var unit: float = clampf(minf(size.x / design.x, size.y / design.y), 0.5, 1.8)
+	var vscale: float = size.y / design.y
+	var me: int = _view.you.seat
+	var my_player: Dictionary = _view.players[me]
+
+	_needs_my_answer = _compute_needs_my_answer()
+	_add_corner_buttons(unit)
+	_add_opponents(narrow, unit, me)
+	_add_last_action(narrow, unit, vscale)
+	_add_hand(narrow, unit, vscale, my_player)
+	_add_bottom(narrow, unit, vscale, my_player)
+
+
+func _compute_needs_my_answer() -> bool:
+	var me: int = _view.you.seat
+	var window: Dictionary = _view.window
+	var response_open: bool = not window.is_empty() and window.eligible.has(me) and not window.passed.has(me)
+	return response_open \
 			or (_view.phase == RulesEngine.PHASE_AWAITING_INFLUENCE_LOSS and _view.loser == me) \
 			or (_view.phase == RulesEngine.PHASE_AWAITING_EXCHANGE and _view.exchange.player == me)
 
+
+# --- corner buttons -----------------------------------------------------
+
+func _add_corner_buttons(unit: float) -> void:
+	var diameter: float = 44 * unit
+	var menu := _round_button("res://assets/arte/design/icone_menu.svg", diameter)
+	menu.position = Vector2(12 * unit, 12 * unit)
+	menu.pressed.connect(_open_menu)
+	_stage.add_child(menu)
+	var rules := _round_button("res://assets/arte/design/icone_regras.svg", diameter)
+	rules.position = Vector2(size.x - diameter - 12 * unit, 12 * unit)
+	rules.pressed.connect(func() -> void: add_child(RulesSheet.rules()))
+	_stage.add_child(rules)
+
+
+func _round_button(icon_path: String, diameter: float) -> Button:
+	var button := Button.new()
+	button.icon = UiKit.texture(icon_path)
+	button.expand_icon = true
+	button.custom_minimum_size = Vector2.ONE * diameter
+	button.size = Vector2.ONE * diameter
+	button.add_theme_constant_override("icon_max_width", int(diameter * 0.45))
+	for state in ["normal", "pressed", "focus"]:
+		button.add_theme_stylebox_override(state, UiKit.box(UiKit.PANEL, UiKit.BORDER, 2, 999))
+	button.add_theme_stylebox_override("hover", UiKit.box(UiKit.PANEL_RAISED, UiKit.GOLD, 2, 999))
+	return button
+
+
+func _open_menu() -> void:
+	var sheet := RulesSheet.menu()
+	sheet.leave_requested.connect(func() -> void: leave_requested.emit())
+	add_child(sheet)
+
+
+# --- opponents ----------------------------------------------------------
+
+func _add_opponents(narrow: bool, unit: float, me: int) -> void:
+	var others: Array = []
+	for step in range(1, _view.players.size()):
+		others.append(_view.players[(me + step) % _view.players.size()])
+	var op_unit: float = unit * (0.74 if narrow else 1.0)
+	var width: float = 130 * op_unit
+	var gap: float = (14 if narrow else 150) * unit
+	var total: float = others.size() * width + (others.size() - 1) * gap
+	if total > size.x * 0.92:
+		op_unit *= size.x * 0.92 / total
+		width = 130 * op_unit
+		gap *= size.x * 0.92 / total
+		total = others.size() * width + (others.size() - 1) * gap
+	var left: float = (size.x - total) / 2.0
+	var top: float = (62 if narrow else 22) * unit
+	for index in range(others.size()):
+		var player: Dictionary = others[index]
+		var view := OpponentView.new()
+		view.setup(player, int(player.id), player.id == _view.current_player and player.alive, op_unit)
+		view.position = Vector2(left + index * (width + gap), top)
+		_stage.add_child(view)
+
+
+# --- last action --------------------------------------------------------
+
+func _add_last_action(narrow: bool, unit: float, vscale: float) -> void:
+	var caption_y: float = (170 if narrow else 215) * vscale
+	var caption := UiKit.label(UiText.LAST_ACTION, int(round(11 * unit * (1.2 if narrow else 1.0))), UiKit.GOLD_TEXT)
+	caption.add_theme_font_override("font", UiKit.font(false, 600, 3))
+	caption.autowrap_mode = TextServer.AUTOWRAP_OFF
+	caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	caption.position = Vector2(0, caption_y)
+	caption.size = Vector2(size.x, 20 * unit)
+	_stage.add_child(caption)
+
+	var headline := RichTextLabel.new()
+	headline.bbcode_enabled = true
+	headline.fit_content = true
+	headline.scroll_active = false
+	headline.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	headline.add_theme_font_override("normal_font", UiKit.font(true, 700, 1))
+	headline.add_theme_font_size_override("normal_font_size", int(round((17 if narrow else 28) * unit * (1.15 if narrow else 1.0))))
+	headline.add_theme_color_override("default_color", UiKit.INK)
+	headline.text = _headline_bbcode()
+	headline.position = Vector2(size.x * 0.05, caption_y + 24 * unit)
+	headline.size = Vector2(size.x * 0.9, 40 * unit)
+	_stage.add_child(headline)
+
+	var pills := HBoxContainer.new()
+	pills.add_theme_constant_override("separation", int(round(10 * unit)))
+	pills.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var pill_size: int = int(round(14 * unit * (1.2 if narrow else 1.0)))
+	pills.add_child(CoinPill.new(int(_view.treasury), UiText.TREASURY, pill_size))
+	pills.add_child(CoinPill.new(int(_view.deck_count), UiText.DECK, pill_size))
+	_stage.add_child(pills)
+	var pills_size: Vector2 = pills.get_combined_minimum_size()
+	pills.size = pills_size
+	pills.position = Vector2((size.x - pills_size.x) / 2.0, caption_y + (24 + (44 if narrow else 56)) * unit)
+
+
+func _headline_bbcode() -> String:
+	var line: String = _log_lines.back() if not _log_lines.is_empty() else UiText.MATCH_STARTED
+	var tags: Dictionary = {}
+	for id: String in UiText.CHARACTER_NAMES:
+		tags[UiText.character(id)] = ["[color=#%s]" % UiKit.CARD_STYLE[id].title.to_html(false), "[/color]"]
+	return "[center]%s[/center]" % UiKit.mark(line, tags)
+
+
+# --- my cards -----------------------------------------------------------
+
+func _add_hand(narrow: bool, unit: float, vscale: float, my_player: Dictionary) -> void:
+	var card_width: float = (160 if narrow else 220) * unit
+	var cards: Array = []
+	for character: String in _view.you.hand:
+		cards.append([character, false])
+	for character: String in my_player.revealed:
+		cards.append([character, true])
+	var step: float = card_width * 0.86
+	var total: float = card_width + step * (cards.size() - 1)
+	var left: float = (size.x - total) / 2.0
+	var top: float = (300 if narrow else 365) * vscale
+	var tilts: Array[float] = [-6.0, 5.0]
+	for index in range(cards.size()):
+		var card := CardView.new(cards[index][0], card_width)
+		card.lost = cards[index][1]
+		card.position = Vector2(left + index * step, top - index * 14 * unit)
+		card.rotation_degrees = tilts[mini(index, 1)]
+		_stage.add_child(card)
+
+
+# --- bottom: title, actions or prompt, coins, log ------------------------
+
+func _add_bottom(narrow: bool, unit: float, vscale: float, my_player: Dictionary) -> void:
+	var title: String = ""
+	var sub: String = ""
+	var me: int = _view.you.seat
+	var show_actions: bool = false
+	var exiled: bool = not my_player.alive and _view.phase != RulesEngine.PHASE_GAME_OVER
+	if exiled:
+		title = UiText.SPECTATOR_TITLE
+		sub = UiText.SPECTATING
+	elif _needs_my_answer:
+		title = UiText.YOUR_ANSWER_TITLE
+	elif _view.phase == RulesEngine.PHASE_AWAITING_ACTION and _view.current_player == me:
+		title = UiText.YOUR_TURN_TITLE
+		sub = UiText.CHOOSE_ACTION_SUB
+		show_actions = _selected_action.is_empty() and not _awaiting_server
+	else:
+		title = UiText.TURN_OF % String(_name(_view.current_player)).to_upper()
+		sub = UiText.WAITING_SUB
+
+	var title_y: float = (592 if narrow else 700) * vscale
+	var title_label := UiKit.label(title, int(round((24 if narrow else 28) * unit * (1.2 if narrow else 1.0))), UiKit.INK, true)
+	title_label.autowrap_mode = TextServer.AUTOWRAP_OFF
+	title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title_label.position = Vector2(0, title_y)
+	title_label.size = Vector2(size.x, 40 * unit)
+	_stage.add_child(title_label)
+	if not sub.is_empty():
+		var sub_label := UiKit.label(sub, int(round(15 * unit * (1.15 if narrow else 1.0))), UiKit.MUTED)
+		sub_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		sub_label.position = Vector2(size.x * 0.05, title_y + 38 * unit)
+		sub_label.size = Vector2(size.x * 0.9, 26 * unit)
+		_stage.add_child(sub_label)
+
+	var bar_y: float = title_y + (74 if narrow else 78) * unit
+	if show_actions:
+		_add_action_bar(narrow, unit, bar_y, int(my_player.coins))
+	elif not exiled and (_needs_my_answer or not _selected_action.is_empty()):
+		_add_prompt_card(unit)
+	if not _toast_text.is_empty():
+		var toast := UiKit.label(_toast_text, int(round(16 * unit)), UiKit.DANGER_DARK)
+		toast.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		toast.position = Vector2(size.x * 0.05, title_y - (100 if narrow else 28) * unit)
+		toast.size = Vector2(size.x * 0.9, 24 * unit)
+		_stage.add_child(toast)
+	_add_coins_and_log(narrow, unit, title_y, int(my_player.coins))
+
+
+func _add_action_bar(narrow: bool, unit: float, bar_y: float, coins: int) -> void:
+	var bar := ActionBar.new()
+	bar.setup(coins, unit * (0.95 if narrow else 1.0), narrow)
+	bar.action_chosen.connect(_on_action_chosen)
+	var bar_size: Vector2 = bar.get_combined_minimum_size()
+	if bar_size.x <= size.x:
+		bar.size = bar_size
+		bar.position = Vector2((size.x - bar_size.x) / 2.0, bar_y)
+		_stage.add_child(bar)
+		return
+	# Wider than the screen (phones): the bar scrolls sideways.
+	var scroll := ScrollContainer.new()
+	scroll.position = Vector2(0, bar_y)
+	scroll.size = Vector2(size.x, bar_size.y + 8 * unit)
+	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.add_child(bar)
+	_stage.add_child(scroll)
+
+
+func _on_action_chosen(action: String) -> void:
+	_toast_text = ""
+	if RulesConfig.ACTIONS[action].targeted:
+		_selected_action = action
+		_render()
+	else:
+		# Until the server answers, the bar is gone: a second tap would only be rejected.
+		_awaiting_server = true
+		intent_chosen.emit({"type": "action", "action": action})
+		_render()
+
+
+func _add_coins_and_log(narrow: bool, unit: float, title_y: float, coins: int) -> void:
+	if narrow:
+		var pill := CoinPill.new(coins, "", int(round(26 * unit)))
+		_stage.add_child(pill)
+		var pill_size: Vector2 = pill.get_combined_minimum_size()
+		pill.size = pill_size
+		pill.position = Vector2((size.x - pill_size.x) / 2.0, title_y - 62 * unit)
+		var log_button := UiKit.button(UiText.LOG_BUTTON)
+		log_button.size = Vector2(110 * unit, 44 * unit)
+		log_button.position = Vector2(12 * unit, size.y - 56 * unit)
+		log_button.add_theme_font_size_override("font_size", int(round(15 * unit)))
+		log_button.pressed.connect(func() -> void: add_child(RulesSheet.log_sheet(_log_lines, _player_names())))
+		_stage.add_child(log_button)
+		return
+
+	var log_panel := LogPanel.new()
+	log_panel.show_lines(_log_lines, _player_names(), 3, int(round(14 * unit)), true)
+	log_panel.set_content_width(310 * unit - 30)
+	_stage.add_child(log_panel)
+	var log_size: Vector2 = log_panel.get_combined_minimum_size()
+	log_panel.size = log_size
+	log_panel.position = Vector2(24 * unit, size.y - log_size.y - 30 * unit)
+
+	var coins_card := UiKit.panel(UiKit.PANEL, UiKit.BORDER, 1)
+	var column := VBoxContainer.new()
+	column.add_theme_constant_override("separation", int(round(4 * unit)))
+	coins_card.add_child(column)
+	var coins_title := UiKit.label(UiText.YOUR_COINS_TITLE, int(round(11 * unit)), UiKit.MUTED)
+	coins_title.autowrap_mode = TextServer.AUTOWRAP_OFF
+	column.add_child(coins_title)
+	var amount := CoinPill.new(coins, "", int(round(28 * unit)))
+	column.add_child(amount)
+	var hint := UiKit.label(UiText.COUP_HINT % RulesConfig.ACTIONS[RulesConfig.GOLPE].cost, int(round(12 * unit)), UiKit.MUTED)
+	hint.autowrap_mode = TextServer.AUTOWRAP_OFF
+	column.add_child(hint)
+	_stage.add_child(coins_card)
+	var card_size: Vector2 = coins_card.get_combined_minimum_size()
+	coins_card.size = card_size
+	coins_card.position = Vector2(size.x - card_size.x - 24 * unit, size.y - card_size.y - 30 * unit)
+
+
+# --- stopgap prompt card ---------------------------------------------------
+
+func _add_prompt_card(unit: float) -> void:
+	var card := UiKit.panel(UiKit.PANEL_RAISED, UiKit.GOLD, 2)
+	var column := VBoxContainer.new()
+	column.add_theme_constant_override("separation", int(round(8 * unit)))
+	card.add_child(column)
+	_prompt_text = UiKit.label("", int(round(18 * unit)), UiKit.INK)
+	column.add_child(_prompt_text)
+	_prompt_buttons = HFlowContainer.new()
+	_prompt_buttons.add_theme_constant_override("h_separation", int(round(8 * unit)))
+	_prompt_buttons.add_theme_constant_override("v_separation", int(round(8 * unit)))
+	column.add_child(_prompt_buttons)
+	_fill_prompt()
+	# On wide screens keep clear of the log card (left) and the coin card (right).
+	var width: float = minf(size.x * 0.92, 980 * unit) if size.x < NARROW_WIDTH else size.x - 2 * 350 * unit
+	# Wrapping text and buttons need a width to be measured against.
+	_prompt_text.custom_minimum_size = Vector2(width - 40 * unit, 0)
+	_prompt_buttons.custom_minimum_size = Vector2(width - 40 * unit, 0)
+	card.custom_minimum_size = Vector2(width, 0)
+	_stage.add_child(card)
+	var card_size: Vector2 = card.get_combined_minimum_size()
+	card.size = Vector2(width, card_size.y)
+	card.position = Vector2((size.x - width) / 2.0, size.y - card_size.y - 70 * unit)
+
+
+func _fill_prompt() -> void:
+	var me: int = _view.you.seat
+	var window: Dictionary = _view.window
+	var pending: Dictionary = _view.pending_action
+	var response_open: bool = not window.is_empty() and window.eligible.has(me) and not window.passed.has(me)
+	if not _selected_action.is_empty():
+		_render_target_prompt(me)
+		return
 	match _view.phase:
-		RulesEngine.PHASE_GAME_OVER:
-			_prompt_text.text = UiText.GAME_OVER % _name(_view.winner)
 		RulesEngine.PHASE_AWAITING_INFLUENCE_LOSS:
-			if _view.loser == me:
-				_prompt_text.text = UiText.LOSE_PROMPT
-				for index in range(_view.you.hand.size()):
-					var choice: int = index
-					var button := UiKit.button(UiText.character(_view.you.hand[index]))
-					button.pressed.connect(func() -> void:
-							intent_chosen.emit({"type": "lose_influence", "card_index": choice}))
-					_prompt_buttons.add_child(button)
-			else:
-				_prompt_text.text = UiText.WAITING_FOR % _name(_view.loser)
+			_prompt_text.text = UiText.LOSE_PROMPT
+			for index in range(_view.you.hand.size()):
+				var choice: int = index
+				var button := UiKit.button(UiText.character(_view.you.hand[index]))
+				button.pressed.connect(func() -> void:
+						intent_chosen.emit({"type": "lose_influence", "card_index": choice}))
+				_prompt_buttons.add_child(button)
 		RulesEngine.PHASE_AWAITING_EXCHANGE:
-			if _view.exchange.player == me and _view.exchange.has("drawn"):
-				_render_exchange_prompt()
-			else:
-				_prompt_text.text = UiText.WAITING_FOR % _name(_view.exchange.player)
+			_render_exchange_prompt()
 		RulesEngine.PHASE_AWAITING_CHALLENGE, RulesEngine.PHASE_AWAITING_BLOCK_CHALLENGE:
 			if response_open:
 				_prompt_text.text = _claim_prompt(window, pending)
 				_add_intent_button(UiText.CHALLENGE, {"type": "challenge"})
 				_add_intent_button(UiText.PASS, {"type": "pass"})
-			else:
-				_prompt_text.text = UiText.WAITING_RESPONSES
 		RulesEngine.PHASE_AWAITING_BLOCK:
 			if response_open:
 				_render_block_prompt(pending, me)
-			else:
-				_prompt_text.text = UiText.WAITING_RESPONSES
-		RulesEngine.PHASE_AWAITING_ACTION:
-			if _view.current_player == me:
-				_render_action_menu(me)
-			else:
-				_prompt_text.text = UiText.WAITING_FOR % _name(_view.current_player)
 
 
-func _render_action_menu(me: int) -> void:
-	var coins: int = _view.players[me].coins
-	if not _selected_action.is_empty():
-		_prompt_text.text = UiText.PICK_TARGET % UiText.action(_selected_action)
-		for player: Dictionary in _view.players:
-			if player.alive and player.id != me:
-				var target: int = player.id
-				var button := UiKit.button(player.name)
-				button.pressed.connect(func() -> void:
-						intent_chosen.emit({"type": "action", "action": _selected_action, "target": target}))
-				_prompt_buttons.add_child(button)
-		var cancel := UiKit.button(UiText.CANCEL)
-		cancel.pressed.connect(func() -> void:
-				_selected_action = ""
-				_render())
-		_prompt_buttons.add_child(cancel)
-		return
-
-	_prompt_text.text = UiText.CHOOSE_ACTION
-	for action: String in RulesConfig.ACTIONS:
-		var definition: Dictionary = RulesConfig.ACTIONS[action]
-		var caption: String = UiText.action(action)
-		if definition.cost > 0:
-			caption += " (%d)" % definition.cost
-		var button := UiKit.button(caption)
-		var forced_coup: bool = coins >= RulesConfig.FORCED_COUP_COINS and action != RulesConfig.GOLPE
-		button.disabled = coins < int(definition.cost) or forced_coup
-		var chosen: String = action
-		button.pressed.connect(func() -> void:
-				if RulesConfig.ACTIONS[chosen].targeted:
-					_selected_action = chosen
-					_render()
-				else:
-					intent_chosen.emit({"type": "action", "action": chosen}))
-		_prompt_buttons.add_child(button)
+func _render_target_prompt(me: int) -> void:
+	_prompt_text.text = UiText.PICK_TARGET % UiText.action(_selected_action)
+	for player: Dictionary in _view.players:
+		if player.alive and player.id != me:
+			var target: int = player.id
+			var button := UiKit.button(player.name)
+			button.pressed.connect(func() -> void:
+					intent_chosen.emit({"type": "action", "action": _selected_action, "target": target}))
+			_prompt_buttons.add_child(button)
+	var cancel := UiKit.button(UiText.CANCEL)
+	cancel.pressed.connect(func() -> void:
+			_selected_action = ""
+			_toast_text = ""
+			_render())
+	_prompt_buttons.add_child(cancel)
 
 
 func _render_block_prompt(pending: Dictionary, me: int) -> void:
@@ -265,8 +433,7 @@ func _render_block_prompt(pending: Dictionary, me: int) -> void:
 	_prompt_text.text = UiText.BLOCK_PROMPT % [_name(pending.actor), UiText.action(pending.action), against]
 	var blockers: Array = RulesConfig.BLOCKS[pending.action].blockers
 	for character: String in blockers:
-		_add_intent_button(UiText.BLOCK_AS % UiText.character(character),
-				{"type": "block", "character": character})
+		_add_intent_button(UiText.BLOCK_AS % UiText.character(character), {"type": "block", "character": character})
 	_add_intent_button(UiText.PASS, {"type": "pass"})
 
 
@@ -307,14 +474,19 @@ func _add_intent_button(caption: String, intent: Dictionary) -> void:
 	_prompt_buttons.add_child(button)
 
 
-func _me() -> int:
-	return _view.you.seat
-
+# --- helpers ---------------------------------------------------------------
 
 func _name(seat: int) -> String:
 	if seat < 0 or seat >= _view.players.size():
 		return "?"
 	return _view.players[seat].name
+
+
+func _player_names() -> Array:
+	var names: Array = []
+	for player: Dictionary in _view.players:
+		names.append(player.name)
+	return names
 
 
 ## One log line for [param event], or "" for events that are not worth showing.

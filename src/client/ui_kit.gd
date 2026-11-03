@@ -160,6 +160,35 @@ static func card(character: String, small: bool = false) -> CardView:
 	return CardView.new(character, SMALL_CARD_WIDTH if small else CARD_WIDTH)
 
 
+## [param raw] as BBCode: every occurrence of a key of [param tags] is wrapped in
+## its [open, close] pair (longest key first, empty keys ignored) and everything
+## else is escaped, so a player named "b" or "[x]" cannot break the markup.
+static func mark(raw: String, tags: Dictionary) -> String:
+	var keys: Array = []
+	for key: String in tags:
+		if not key.is_empty():
+			keys.append(key)
+	keys.sort_custom(func(first: String, second: String) -> bool: return first.length() > second.length())
+	var marked: String = ""
+	var plain: String = ""
+	var index: int = 0
+	while index < raw.length():
+		var matched: String = ""
+		for key: String in keys:
+			if raw.substr(index, key.length()) == key:
+				matched = key
+				break
+		if matched.is_empty():
+			plain += raw[index]
+			index += 1
+		else:
+			marked += plain.replace("[", "[lb]")
+			plain = ""
+			marked += tags[matched][0] + matched.replace("[", "[lb]") + tags[matched][1]
+			index += matched.length()
+	return marked + plain.replace("[", "[lb]")
+
+
 ## Removes and frees every child of [param container].
 static func clear(container: Node) -> void:
 	for child in container.get_children():
