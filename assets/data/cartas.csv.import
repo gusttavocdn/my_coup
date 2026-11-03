@@ -1,0 +1,19 @@
+[remap]
+
+importer="csv_translation"
+type="Translation"
+uid="uid://drihhj45kbetm"
+
+[deps]
+
+files=["res://assets/data/cartas.personagem.translation", "res://assets/data/cartas.titulo.translation", "res://assets/data/cartas.acao.translation", "res://assets/data/cartas.acao.translation", "res://assets/data/cartas.custo.translation", "res://assets/data/cartas.ganho.translation", "res://assets/data/cartas.exige.translation", "res://assets/data/cartas.bloqueavel.translation", "res://assets/data/cartas.bloqueia.translation", "res://assets/data/cartas.bloqueia.translation", "res://assets/data/cartas.bloqueio.translation", "res://assets/data/cartas.copias.translation", "res://assets/data/cartas.texto.translation", "res://assets/data/cartas.arte.translation", "res://assets/data/cartas.imagem.translation"]
+
+source_file="res://assets/data/cartas.csv"
+dest_files=["res://assets/data/cartas.personagem.translation", "res://assets/data/cartas.titulo.translation", "res://assets/data/cartas.acao.translation", "res://assets/data/cartas.acao.translation", "res://assets/data/cartas.custo.translation", "res://assets/data/cartas.ganho.translation", "res://assets/data/cartas.exige.translation", "res://assets/data/cartas.bloqueavel.translation", "res://assets/data/cartas.bloqueia.translation", "res://assets/data/cartas.bloqueia.translation", "res://assets/data/cartas.bloqueio.translation", "res://assets/data/cartas.copias.translation", "res://assets/data/cartas.texto.translation", "res://assets/data/cartas.arte.translation", "res://assets/data/cartas.imagem.translation"]
+
+[params]
+
+compress=1
+delimiter=0
+unescape_keys=false
+unescape_translations=true

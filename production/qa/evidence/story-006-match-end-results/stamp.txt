@@ -1,0 +1,11 @@
+Reviewed-Content-Hash: src/rules/rules_engine.gd 51905b3c5213ee85357f4f88fc717c0a06ae9bcf
+Reviewed-Content-Hash: src/server/room.gd eab649df68cbedd6723b5fb2e5aa212205cbc099
+Reviewed-Content-Hash: src/server/room_registry.gd 4c923157861b35c04947b108f2bc23a1e808749b
+Reviewed-Content-Hash: src/client/ui_text.gd 2effa4f74c616af5c05205d5621b6e45c1f8297c
+Reviewed-Content-Hash: src/client/result_screen.gd 094c95ee820c74afdccbd903f9c43dd536f70fa7
+Reviewed-Content-Hash: src/client/table_screen.gd b573f948cfc0ab4fb7c47a4b729262e8b36c6ed7
+Reviewed-Content-Hash: src/client/client_main.gd d4642be06dd097d0fe492253153dc34b2e209e1d
+Reviewed-Content-Hash: src/client/preview.gd b2dc726690dc6b903e774775c86ef45decb3b4eb
+Reviewed-Content-Hash: tests/helpers/bot_match.gd 49655a5c719f43e58fe60088d61af71dccd60b06
+Reviewed-Content-Hash: tests/integration/server/full_match_test.gd 9bf60d3d060f8a108ba3263479f9a1336f9275fb
+Reviewed-Content-Hash: tests/integration/server/match_end_test.gd e491642275791e29b826cd22f2cbb08fd14439f0

@@ -1,0 +1,12 @@
+Reviewed-Content-Hash: src/client/ui_text.gd 022562eef34a0a938bcf812800f0e15d8a338822
+Reviewed-Content-Hash: src/client/ui_kit.gd ed23dcd4c3a2166821e633278a1158cf0f41cd04
+Reviewed-Content-Hash: src/client/client_net.gd b02f882681278faf72cf48497f2ec159ccfc5645
+Reviewed-Content-Hash: src/client/lobby_screen.gd 8b354f389669cd0836a6aba60f96e48fa26f6768
+Reviewed-Content-Hash: src/client/table_screen.gd 9a729871f43337050533aebbd9eb369f80973b63
+Reviewed-Content-Hash: src/client/client_main.gd 875e561af8ad1f9a4635a62090784eff4da3fc10
+Reviewed-Content-Hash: src/client/preview.gd 6d332caecd36b5f9471b5f7bdfb526d2ac5486bc
+Reviewed-Content-Hash: src/server/server_main.gd 71507cf96ad103df72337efef480ff8a42a21972
+Reviewed-Content-Hash: scenes/main.tscn 15f3df4f3ba7f16bf5c07bdec47b6c51d3d12f89
+Reviewed-Content-Hash: scenes/preview.tscn bb983681fac5a986f57df5bd2a6b16e7cd720f58
+Reviewed-Content-Hash: scenes/server.tscn 5988f4641bf92db2905e0429811f54dca1d6997c
+Reviewed-Content-Hash: project.godot 90b4df3dcd569f73eb85d993a43b9d81143e04e2
