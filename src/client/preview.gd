@@ -50,10 +50,11 @@ func _ready() -> void:
 	add_child(table)
 	table.set_room_code(code)
 	table.apply_update(room.view_for(1), events)
-	if state == "target":
-		# Same state a tap on "Extorquir" leaves behind: waiting for a target.
-		table._selected_action = RulesConfig.EXTORQUIR
-		table._render()
+	if state.begins_with("target"):
+		# What a tap on a targeted medallion does; "_pick" also taps Bia's avatar.
+		table._on_action_chosen(RulesConfig.ASSASSINAR if state.contains("ass") else RulesConfig.EXTORQUIR)
+		if state.ends_with("pick"):
+			table._target_screen.select(1)
 	if state == "rules":
 		table.add_child(RulesSheet.rules())
 	elif state == "menu":
@@ -175,7 +176,7 @@ func _stage(state: String) -> Array:
 	room.engine.state.players[1].hand = ["capitao", "assassino"] as Array[String]
 	room.engine.state.players[2].hand = ["embaixador", "duque"] as Array[String]
 	match state:
-		"turn", "target", "rules", "menu", "log":
+		"turn", "target_ass", "target_ass_pick", "target_ext", "target_ext_pick", "rules", "menu", "log":
 			room.engine.state.players[0].coins = 4
 		"forced":
 			room.engine.state.players[0].coins = 10

@@ -26,6 +26,7 @@ var _exchange_picks: Array[int] = []
 var _log_lines: Array[String] = []
 var _toast_text: String = ""
 var _awaiting_server: bool = false
+var _target_screen: TargetScreen
 
 var _stage: Control
 var _prompt_text: Label
@@ -45,7 +46,7 @@ func _ready() -> void:
 func reset() -> void:
 	_view = {}
 	_log_lines.clear()
-	_selected_action = ""
+	_close_target_screen()
 	_exchange_picks.clear()
 	_needs_my_answer = false
 	_toast_text = ""
@@ -62,7 +63,7 @@ func apply_update(view: Dictionary, events: Array) -> void:
 	_toast_text = ""
 	_awaiting_server = false
 	# Any update means the state moved on, so a half-made action choice is void.
-	_selected_action = ""
+	_close_target_screen()
 	if view.phase != RulesEngine.PHASE_AWAITING_EXCHANGE:
 		_exchange_picks.clear()
 	for event: Dictionary in events:
@@ -273,7 +274,7 @@ func _add_bottom(narrow: bool, unit: float, vscale: float, my_player: Dictionary
 	var bar_y: float = title_y + (74 if narrow else 78) * unit
 	if show_actions:
 		_add_action_bar(narrow, unit, bar_y, int(my_player.coins))
-	elif not exiled and (_needs_my_answer or not _selected_action.is_empty()):
+	elif not exiled and _needs_my_answer:
 		_add_prompt_card(unit)
 	if not _toast_text.is_empty():
 		var toast := UiKit.label(_toast_text, int(round(16 * unit)), UiKit.DANGER_DARK)
@@ -306,13 +307,34 @@ func _add_action_bar(narrow: bool, unit: float, bar_y: float, coins: int) -> voi
 func _on_action_chosen(action: String) -> void:
 	_toast_text = ""
 	if RulesConfig.ACTIONS[action].targeted:
-		_selected_action = action
-		_render()
+		_open_target_screen(action)
 	else:
 		# Until the server answers, the bar is gone: a second tap would only be rejected.
 		_awaiting_server = true
 		intent_chosen.emit({"type": "action", "action": action})
 		_render()
+
+
+func _open_target_screen(action: String) -> void:
+	_close_target_screen()
+	_selected_action = action
+	_target_screen = TargetScreen.new()
+	add_child(_target_screen)
+	_target_screen.setup(action, _view)
+	_target_screen.cancelled.connect(_close_target_screen)
+	_target_screen.confirmed.connect(func(target: int) -> void:
+			var chosen: String = _selected_action
+			_close_target_screen()
+			_awaiting_server = true
+			intent_chosen.emit({"type": "action", "action": chosen, "target": target})
+			_render())
+
+
+func _close_target_screen() -> void:
+	_selected_action = ""
+	if _target_screen != null and is_instance_valid(_target_screen):
+		_target_screen.queue_free()
+	_target_screen = null
 
 
 func _add_coins_and_log(narrow: bool, unit: float, title_y: float, coins: int) -> void:
@@ -387,9 +409,6 @@ func _fill_prompt() -> void:
 	var window: Dictionary = _view.window
 	var pending: Dictionary = _view.pending_action
 	var response_open: bool = not window.is_empty() and window.eligible.has(me) and not window.passed.has(me)
-	if not _selected_action.is_empty():
-		_render_target_prompt(me)
-		return
 	match _view.phase:
 		RulesEngine.PHASE_AWAITING_INFLUENCE_LOSS:
 			_prompt_text.text = UiText.LOSE_PROMPT
@@ -409,23 +428,6 @@ func _fill_prompt() -> void:
 		RulesEngine.PHASE_AWAITING_BLOCK:
 			if response_open:
 				_render_block_prompt(pending, me)
-
-
-func _render_target_prompt(me: int) -> void:
-	_prompt_text.text = UiText.PICK_TARGET % UiText.action(_selected_action)
-	for player: Dictionary in _view.players:
-		if player.alive and player.id != me:
-			var target: int = player.id
-			var button := UiKit.button(player.name)
-			button.pressed.connect(func() -> void:
-					intent_chosen.emit({"type": "action", "action": _selected_action, "target": target}))
-			_prompt_buttons.add_child(button)
-	var cancel := UiKit.button(UiText.CANCEL)
-	cancel.pressed.connect(func() -> void:
-			_selected_action = ""
-			_toast_text = ""
-			_render())
-	_prompt_buttons.add_child(cancel)
 
 
 func _render_block_prompt(pending: Dictionary, me: int) -> void:

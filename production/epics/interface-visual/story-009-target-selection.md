@@ -1,12 +1,12 @@
 # Story 009: Escolher alvo
 
 > **Epic**: interface-visual
-> **Status**: Ready
+> **Status**: Complete
 > **Layer**: Presentation
 > **Type**: UI
 > **Estimate**: M
 > **Manifest Version**: N/A (minimal — no control manifest)
-> **Last Updated**: —
+> **Last Updated**: 2026-11-03
 
 ## Context
 
@@ -51,9 +51,10 @@ Reuse `AvatarView`, the coin pill and the medallion icon from story 007/008. Col
 
 ## Files
 
-- `src/client/target_screen.gd`, `src/client/table_screen.gd` (wire-up), `src/client/ui_text.gd`, `src/client/preview.gd`
-
----
+- `src/client/target_screen.gd` (new)
+- `src/client/table_screen.gd` (opens the target screen, stopgap target buttons removed)
+- `src/client/preview.gd` (target_* states)
+- `production/qa/evidence/story-009-target-selection/`
 
 ## QA Test Cases
 
@@ -65,7 +66,7 @@ Reuse `AvatarView`, the coin pill and the medallion icon from story 007/008. Col
 
 **Story Type**: UI
 **Required evidence**: a retained screenshot of each screen touched, in `production/qa/evidence/story-009-target-selection/`
-**Status**: [ ] Not yet created
+**Status**: [x] Captured 2026-11-03 — desktop (1280x720) and phone (540x960): Assassinar and Extorquir, nothing selected and one selected
 
 ---
 
@@ -73,3 +74,10 @@ Reuse `AvatarView`, the coin pill and the medallion icon from story 007/008. Col
 
 - Depends on: `production/epics/interface-visual/story-008-new-table.md`
 - Unlocks: None
+
+## Completion Notes
+**Completed**: 2026-11-03
+**Criteria**: 9/9 passing (confirm sends the intent and Cancelar closes the screen: confirmed by the user, not captured; "eliminated not offered" and the Golpe prompt phrase checked in code only)
+**Deviations**: Advisory — on desktop the header pill overlaps the dimmed opponents behind; the screen uses the phone-sized column centered. target_screen.gd.uid (engine-generated) not listed under Files.
+**Test Evidence**: production/qa/evidence/story-009-target-selection/ (8 screenshots, stamped; tests waived at qa.level minimal)
+**Reviewed by**: self, no independent review

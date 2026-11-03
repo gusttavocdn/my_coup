@@ -1,0 +1,3 @@
+Reviewed-Content-Hash: src/client/target_screen.gd ba2f1201231149d4cf292989b7f0e1661c1d8bfe
+Reviewed-Content-Hash: src/client/table_screen.gd 995c230293d84f878a9746038f80e04e603eea74
+Reviewed-Content-Hash: src/client/preview.gd 7b38b865b730aec907c72c38be8a1ec66d4510b7
