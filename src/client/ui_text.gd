@@ -48,6 +48,17 @@ const ERRORS: Dictionary = {
 	"invalid_name": "Digite um nome.",
 	"not_in_room": "Você não está em uma sala.",
 	"match_not_over": "A partida ainda não terminou.",
+	"no_response_pending": "A janela de resposta já fechou.",
+	"no_influence_loss_pending": "Ninguém precisa perder influência agora.",
+	"no_exchange_pending": "Não há troca em andamento.",
+	"not_your_loss": "Não é você quem perde a influência.",
+	"not_your_exchange": "A troca não é sua.",
+	"invalid_card": "Carta inválida.",
+	"invalid_keep": "Escolha o número certo de cartas.",
+	"invalid_block_character": "Essa carta não bloqueia esta ação.",
+	"invalid_intent": "Comando inválido.",
+	"match_not_started": "A partida ainda não começou.",
+	"already_joined": "Você já está nesta sala.",
 }
 
 const TITLE: String = "Coup Online"
