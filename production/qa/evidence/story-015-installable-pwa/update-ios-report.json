@@ -1,0 +1,18 @@
+{
+  "firstCaches": [
+    "Coup Online-sw-cache-1793834863|5090626"
+  ],
+  "updateReadyBefore": false,
+  "updateReadyAfterDeploy": true,
+  "cachesWhileWaiting": [
+    "Coup Online-sw-cache-1793834863|5090626",
+    "Coup Online-sw-cache-simulated-new-deploy"
+  ],
+  "waiting": true,
+  "cachesAfterApply": [
+    "Coup Online-sw-cache-simulated-new-deploy"
+  ],
+  "updateReadyAfterApply": false,
+  "controlledAfterApply": true,
+  "coupIsIos": true
+}

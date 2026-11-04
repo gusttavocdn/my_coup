@@ -1,0 +1,34 @@
+{
+  "url": "http://127.0.0.1:8000/index.html",
+  "displayStandalone": true,
+  "installability": {
+    "installabilityErrors": []
+  },
+  "sw": [
+    {
+      "scope": "http://127.0.0.1:8000/",
+      "active": "activated",
+      "script": "http://127.0.0.1:8000/index.service.worker.js"
+    }
+  ],
+  "cache": {
+    "Coup Online-sw-cache-1793826911|4472659": [
+      "/index.html",
+      "/index.js",
+      "/index.offline.html",
+      "/index.icon.png",
+      "/index.apple-touch-icon.png",
+      "/index.audio.worklet.js",
+      "/index.audio.position.worklet.js",
+      "/index.wasm",
+      "/index.pck",
+      "/icon-192.png",
+      "/icon-maskable-512.png",
+      "/index.144x144.png",
+      "/index.512x512.png",
+      "/index.manifest.json"
+    ]
+  },
+  "canInstall": false,
+  "isStandaloneFn": true
+}

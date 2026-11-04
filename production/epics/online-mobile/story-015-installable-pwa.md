@@ -1,12 +1,12 @@
 # Story 015: PWA instalável (manifesto, ícones, service worker, iOS)
 
 > **Epic**: online-mobile
-> **Status**: Ready
+> **Status**: Complete
 > **Layer**: Platform
 > **Type**: Integration
 > **Estimate**: M
 > **Manifest Version**: N/A (minimal — no control manifest)
-> **Last Updated**: —
+> **Last Updated**: 2026-11-04
 
 ## Context
 
@@ -50,10 +50,19 @@ Installing requires HTTPS (localhost counts for testing). Keep the install butto
 
 ## Files
 
-- `export_presets.cfg` (PWA options), `web/shell.html`, `web/icons/*`
-- `tools/make-icons.*`, `src/client/lobby_screen.gd` (iOS hint, install button)
-
----
+export_presets.cfg
+web/shell.html
+web/offline.html
+web/icons/icon-144.png
+web/icons/icon-192.png
+web/icons/icon-512.png
+web/icons/icon-maskable-512.png
+web/icons/apple-touch-icon-180.png
+tools/make-icons.ps1
+tools/build-web.ps1
+src/client/lobby_screen.gd
+src/client/web_viewport.gd
+src/client/ui_text.gd
 
 ## QA Test Cases
 
@@ -65,7 +74,7 @@ Installing requires HTTPS (localhost counts for testing). Keep the install butto
 
 **Story Type**: Integration
 **Required evidence**: the kept Lighthouse/DevTools installability report plus the two screenshots, in `production/qa/evidence/story-015-installable-pwa/`; tests waived at `qa.level: minimal`
-**Status**: [ ] Not yet created
+**Status**: [x] Created — production/qa/evidence/story-015-installable-pwa/
 
 ---
 
@@ -73,3 +82,12 @@ Installing requires HTTPS (localhost counts for testing). Keep the install butto
 
 - Depends on: `production/epics/online-mobile/story-013-web-client.md`
 - Unlocks: `production/epics/online-mobile/story-017-hosting-and-publish.md`
+
+---
+
+## Completion Notes
+**Completed**: 2026-11-04
+**Criteria**: 8/8 passing (criterion 6 confirmed by the user, backed by a real headed-Chrome install and OS capture of the installed window)
+**Deviations**: Advisory — HTTPS, install on a real Android/iPhone and iOS Safari behaviour unverified (story 017); install button and iPhone hint captured with a real/simulated event in emulation; Lighthouse 12+ has no PWA category, so Chrome's `Page.getInstallabilityErrors` (`[]`) is the kept report. Bug found and fixed during real install: `<html lang>` was `en` (Chrome offered Translate), now `pt-BR`.
+**Test Evidence**: `production/qa/evidence/story-015-installable-pwa/` (see its README.md); unit tests waived at qa.level minimal
+**Reviewed by**: self, no independent review

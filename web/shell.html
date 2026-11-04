@@ -1,8 +1,13 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR">
 	<head>
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+		<meta name="theme-color" content="#f7f5fb">
+		<meta name="apple-mobile-web-app-capable" content="yes">
+		<meta name="mobile-web-app-capable" content="yes">
+		<meta name="apple-mobile-web-app-title" content="Coup Online">
+		<meta name="apple-mobile-web-app-status-bar-style" content="default">
 		<title>$GODOT_PROJECT_NAME</title>
 		<style>
 html, body, #canvas {
@@ -156,6 +161,82 @@ window.coupInsets = function () {
 	return [style.paddingTop, style.paddingRight, style.paddingBottom, style.paddingLeft]
 		.map(parseFloat).concat([keyboard]).join(',');
 };
+
+/* Story 015: install plumbing, read by src/client/web_viewport.gd. The browser
+   fires beforeinstallprompt only on Chrome/Edge/Android; iOS Safari has no such
+   event, so the game shows a manual hint there instead. */
+(function () {
+	let installPrompt = null;
+	window.addEventListener('beforeinstallprompt', function (event) {
+		event.preventDefault();
+		installPrompt = event;
+	});
+	window.addEventListener('appinstalled', function () {
+		installPrompt = null;
+	});
+	window.coupIsStandalone = function () {
+		return (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)
+			|| window.navigator.standalone === true;
+	};
+	/* iPhone only: Safari on iPhone has no install event, the player must use Share. */
+	window.coupIsIos = function () {
+		return /iPhone|iPod/.test(navigator.userAgent || '');
+	};
+	window.coupCanInstall = function () {
+		return installPrompt !== null && !window.coupIsStandalone();
+	};
+	window.coupInstall = function () {
+		if (installPrompt === null) {
+			return;
+		}
+		const pending = installPrompt;
+		installPrompt = null; // a prompt event can be used once
+		pending.prompt();
+	};
+
+	/* A new deploy installs its own cache in a waiting service worker; the old
+	   one keeps serving the old, complete build until the player accepts. */
+	let waitingWorker = null;
+	function watch(registration) {
+		if (registration.waiting && navigator.serviceWorker.controller) {
+			waitingWorker = registration.waiting;
+		}
+		registration.addEventListener('updatefound', function () {
+			const worker = registration.installing;
+			if (!worker) {
+				return;
+			}
+			worker.addEventListener('statechange', function () {
+				if (worker.state === 'installed' && navigator.serviceWorker.controller) {
+					waitingWorker = worker;
+				}
+			});
+		});
+	}
+	if ('serviceWorker' in navigator) {
+		// The engine registers the worker when it starts; poll briefly until it exists.
+		let tries = 0;
+		const timer = setInterval(function () {
+			navigator.serviceWorker.getRegistration().then(function (registration) {
+				if (registration) {
+					clearInterval(timer);
+					watch(registration);
+				}
+			});
+			if (++tries > 60) {
+				clearInterval(timer);
+			}
+		}, 500);
+	}
+	window.coupUpdateReady = function () {
+		return waitingWorker !== null;
+	};
+	window.coupApplyUpdate = function () {
+		if (waitingWorker) {
+			waitingWorker.postMessage('update'); // worker: skipWaiting, claim, reload clients
+		}
+	};
+}());
 		</script>
 
 		<script src="$GODOT_URL"></script>

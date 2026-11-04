@@ -1,0 +1,13 @@
+Reviewed-Content-Hash: export_presets.cfg 259cc5c1abc13ccb17fb22cfa50401a3aa75940e
+Reviewed-Content-Hash: web/shell.html a4d06c8fe4456a812202ed952721f16d90e41998
+Reviewed-Content-Hash: web/offline.html f5a7816a31261fe729d1f913bfdc6862064709b0
+Reviewed-Content-Hash: web/icons/icon-144.png ff6564093a51d39e0cfd77cae44ab4dd641e65e8
+Reviewed-Content-Hash: web/icons/icon-192.png e603e846447460677708adca7ace1dfec98e5a78
+Reviewed-Content-Hash: web/icons/icon-512.png 773fdd5d10f0ef52f0b3cd80c3a404f06b6c8097
+Reviewed-Content-Hash: web/icons/icon-maskable-512.png 4ef06b46eed30b02056a5755356b7d5c82a8e0a1
+Reviewed-Content-Hash: web/icons/apple-touch-icon-180.png ac07c8e3db3e350faf06b6cb3a52c49202bca021
+Reviewed-Content-Hash: tools/make-icons.ps1 f5bbba83ed8285a98a213578b781a7635a5be2b0
+Reviewed-Content-Hash: tools/build-web.ps1 de6935218a2c858db0904a9317a5388e329f2430
+Reviewed-Content-Hash: src/client/lobby_screen.gd ab2564cd73c6723b48905b2246c2668d7c28dd01
+Reviewed-Content-Hash: src/client/web_viewport.gd 899e9a8839adb7d099c849e2f39f000317f43bc3
+Reviewed-Content-Hash: src/client/ui_text.gd 08dee8a58d6de5d24c74ec17fb98abc013016cc5

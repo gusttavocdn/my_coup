@@ -7,6 +7,8 @@ extends Control
 
 ## Seconds between two reads of the keyboard height while a field has focus.
 const KEYBOARD_POLL_SECONDS: float = 0.15
+## Seconds between two checks of the browser's install and update offers.
+const OFFER_POLL_SECONDS: float = 1.0
 
 signal create_pressed(url: String, player_name: String)
 signal join_pressed(url: String, player_name: String, code: String)
@@ -26,10 +28,14 @@ var _start_button: Button
 var _status: Label
 var _copy_button: Button
 var _fullscreen_button: Button
+var _install_button: Button
+var _update_button: Button
+var _ios_hint: Label
 var _code: String = ""
 var _scroll: ScrollContainer
 var _keyboard: float = 0.0
 var _poll_left: float = 0.0
+var _offer_poll_left: float = 0.0
 
 
 func _ready() -> void:
@@ -78,6 +84,20 @@ func _ready() -> void:
 			WebViewport.enter_fullscreen()
 			_fullscreen_button.visible = false)
 	_connect_box.add_child(_fullscreen_button)
+	_install_button = UiKit.button(UiText.INSTALL_GAME)
+	_install_button.visible = false
+	_install_button.pressed.connect(func() -> void:
+			WebViewport.install()
+			_install_button.visible = false)
+	_connect_box.add_child(_install_button)
+	_update_button = UiKit.button(UiText.UPDATE_AVAILABLE)
+	_update_button.visible = false
+	_update_button.pressed.connect(WebViewport.apply_update)
+	_connect_box.add_child(_update_button)
+	_ios_hint = UiKit.label(UiText.IOS_INSTALL_HINT, 16, UiKit.MUTED)
+	_ios_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_ios_hint.visible = WebViewport.should_show_ios_hint()
+	_connect_box.add_child(_ios_hint)
 
 	_room_box = VBoxContainer.new()
 	_room_box.add_theme_constant_override("separation", 10)
@@ -114,6 +134,7 @@ func show_connect() -> void:
 	_connect_box.visible = true
 	_room_box.visible = false
 	_fullscreen_button.visible = WebViewport.can_fullscreen()
+	_refresh_install_offers()
 	set_status("")
 
 
@@ -136,6 +157,10 @@ func show_room(lobby: Dictionary, my_peer: int) -> void:
 ## While a field has focus, shrinks the scroll area to what the on-screen keyboard
 ## leaves free and scrolls the field into view.
 func _process(delta: float) -> void:
+	_offer_poll_left -= delta
+	if _offer_poll_left <= 0.0:
+		_offer_poll_left = OFFER_POLL_SECONDS
+		_refresh_install_offers()
 	var focused: Control = get_viewport().gui_get_focus_owner()
 	var typing: bool = focused is LineEdit and is_ancestor_of(focused)
 	_poll_left -= delta
@@ -149,6 +174,15 @@ func _process(delta: float) -> void:
 		if typing:
 			# The scroll area resizes on the next layout pass.
 			_scroll.ensure_control_visible.call_deferred(focused)
+
+
+## Shows "Instalar o jogo" once the browser offers it, "Nova versão: atualizar"
+## when a new build waits, and the iPhone hint; only on the connect form.
+func _refresh_install_offers() -> void:
+	var on_form: bool = _connect_box.visible
+	_install_button.visible = on_form and WebViewport.can_install()
+	_update_button.visible = on_form and WebViewport.update_ready()
+	_ios_hint.visible = on_form and WebViewport.should_show_ios_hint()
 
 
 ## A fan of three cards above the title, the lobby's decoration.

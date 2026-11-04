@@ -1,0 +1,8 @@
+{
+  "url": "http://127.0.0.1:8000/index.html",
+  "displayStandalone": true,
+  "coupIsStandalone": true,
+  "canInstall": false,
+  "swController": true,
+  "size": "500x858"
+}

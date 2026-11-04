@@ -4,7 +4,9 @@ extends RefCounted
 ## safe-area insets (notch, rounded corners, home indicator), the height the
 ## on-screen keyboard covers, and full screen. The numbers come from
 ## window.coupInsets, defined by web/shell.html. Outside a Web export every
-## inset is zero and full screen is not offered, so desktop is unchanged.
+## inset is zero and full screen is not offered, so desktop is unchanged. It
+## also answers the install questions (Chrome's install prompt, the iPhone hint,
+## a waiting new version) through the coup* functions of the same shell.
 ## Every JavaScriptBridge call is guarded by OS.has_feature("web").
 
 
@@ -30,6 +32,41 @@ static func can_fullscreen() -> bool:
 static func enter_fullscreen() -> void:
 	if OS.has_feature("web"):
 		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
+
+
+## True when the browser offered to install the game (Chrome/Android) and the
+## game is not already running installed. Example: `button.visible = WebViewport.can_install()`.
+static func can_install() -> bool:
+	return _call_bool("coupCanInstall")
+
+
+## Shows the browser's install prompt. Call it from a button press (a user gesture).
+static func install() -> void:
+	if OS.has_feature("web"):
+		JavaScriptBridge.eval("window.coupInstall && window.coupInstall()", true)
+
+
+## True on an iPhone browser tab that is not yet installed: Safari has no install
+## prompt there, so the lobby explains Share -> Add to Home Screen instead.
+static func should_show_ios_hint() -> bool:
+	return _call_bool("coupIsIos") and not _call_bool("coupIsStandalone")
+
+
+## True when a new build finished downloading and waits for the player to accept it.
+static func update_ready() -> bool:
+	return _call_bool("coupUpdateReady")
+
+
+## Activates the waiting new build; the page reloads itself with it.
+static func apply_update() -> void:
+	if OS.has_feature("web"):
+		JavaScriptBridge.eval("window.coupApplyUpdate && window.coupApplyUpdate()", true)
+
+
+static func _call_bool(function_name: String) -> bool:
+	if not OS.has_feature("web"):
+		return false
+	return bool(JavaScriptBridge.eval("!!(window.%s && window.%s())" % [function_name, function_name], true))
 
 
 ## [top, right, bottom, left, keyboard] in CSS pixels.
