@@ -16,7 +16,7 @@ signal leave_requested
 ## Beyond this many log lines the oldest are dropped.
 const MAX_LOG_LINES: int = 60
 ## Windows narrower than this use the phone layout.
-const NARROW_WIDTH: float = 900.0
+const NARROW_WIDTH: float = UiKit.NARROW_LAYOUT_WIDTH
 const WIDE_DESIGN: Vector2 = Vector2(1440, 900)
 const NARROW_DESIGN: Vector2 = Vector2(390, 844)
 
@@ -238,13 +238,13 @@ func _compute_needs_my_answer() -> bool:
 # --- corner buttons -----------------------------------------------------
 
 func _add_corner_buttons(unit: float) -> void:
-	var diameter: float = 44 * unit
+	var diameter: float = maxf(44 * unit, UiKit.touch_height())
 	var menu := _round_button("res://assets/arte/design/icone_menu.svg", diameter)
-	menu.position = Vector2(12 * unit, 12 * unit)
+	menu.position = Vector2(6 * unit, 6 * unit)
 	menu.pressed.connect(_open_menu)
 	_stage.add_child(menu)
 	var rules := _round_button("res://assets/arte/design/icone_regras.svg", diameter)
-	rules.position = Vector2(size.x - diameter - 12 * unit, 12 * unit)
+	rules.position = Vector2(size.x - diameter - 6 * unit, 6 * unit)
 	rules.pressed.connect(func() -> void: add_child(RulesSheet.rules()))
 	_stage.add_child(rules)
 
@@ -256,9 +256,11 @@ func _round_button(icon_path: String, diameter: float) -> Button:
 	button.custom_minimum_size = Vector2.ONE * diameter
 	button.size = Vector2.ONE * diameter
 	button.add_theme_constant_override("icon_max_width", int(diameter * 0.45))
-	for state in ["normal", "pressed", "focus"]:
+	for state in ["normal", "focus"]:
 		button.add_theme_stylebox_override(state, UiKit.box(UiKit.PANEL, UiKit.BORDER, 2, 999))
-	button.add_theme_stylebox_override("hover", UiKit.box(UiKit.PANEL_RAISED, UiKit.GOLD, 2, 999))
+	# Pressed looks like hover, so touch (which never hovers) gets the same feedback.
+	for state in ["hover", "pressed", "hover_pressed"]:
+		button.add_theme_stylebox_override(state, UiKit.box(UiKit.PANEL_RAISED, UiKit.GOLD, 2, 999))
 	return button
 
 
@@ -406,6 +408,8 @@ func _add_action_bar(narrow: bool, unit: float, bar_y: float, coins: int) -> voi
 	bar.setup(coins, unit * (0.95 if narrow else 1.0), narrow)
 	bar.action_chosen.connect(_on_action_chosen)
 	var bar_size: Vector2 = bar.get_combined_minimum_size()
+	# A short window (phone on its side) must not push the touch-sized bar off the bottom.
+	bar_y = minf(bar_y, size.y - bar_size.y - 8 * unit)
 	if bar_size.x <= size.x:
 		bar.size = bar_size
 		bar.position = Vector2((size.x - bar_size.x) / 2.0, bar_y)
@@ -416,6 +420,7 @@ func _add_action_bar(narrow: bool, unit: float, bar_y: float, coins: int) -> voi
 	scroll.position = Vector2(0, bar_y)
 	scroll.size = Vector2(size.x, bar_size.y + 8 * unit)
 	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.scroll_deadzone = int(UiKit.css_to_layout(UiKit.DRAG_SLOP))
 	scroll.add_child(bar)
 	_stage.add_child(scroll)
 
@@ -461,8 +466,8 @@ func _add_coins_and_log(narrow: bool, unit: float, title_y: float, coins: int) -
 		pill.size = pill_size
 		pill.position = Vector2((size.x - pill_size.x) / 2.0, title_y - 62 * unit)
 		var log_button := UiKit.button(UiText.LOG_BUTTON)
-		log_button.size = Vector2(110 * unit, 44 * unit)
-		log_button.position = Vector2(12 * unit, size.y - 56 * unit)
+		log_button.size = Vector2(110 * unit, maxf(44 * unit, UiKit.touch_height()))
+		log_button.position = Vector2(12 * unit, size.y - log_button.size.y - 12 * unit)
 		log_button.add_theme_font_size_override("font_size", int(round(15 * unit)))
 		log_button.pressed.connect(func() -> void: add_child(RulesSheet.log_sheet(_log_lines, _player_names())))
 		_stage.add_child(log_button)

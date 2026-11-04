@@ -10,12 +10,20 @@ var _lobby: LobbyScreen
 var _table: TableScreen
 var _result: ResultScreen
 var _queued_intent: Dictionary = {}
+## Holds every screen, inset by the device safe area so nothing sits under a notch or the home indicator.
+var _safe_frame: Control
 
 func _ready() -> void:
 	theme = UiKit.build_theme()
 	UiKit.fit_scale(get_window())
 	get_window().size_changed.connect(func() -> void: UiKit.fit_scale(get_window()))
 	add_child(SceneBackdrop.new())
+	_safe_frame = Control.new()
+	_safe_frame.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_safe_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_safe_frame)
+	_apply_safe_area()
+	get_window().size_changed.connect(_apply_safe_area)
 
 	_net = ClientNet.new()
 	_net.name = "GameServer"
@@ -28,7 +36,7 @@ func _ready() -> void:
 	_lobby = LobbyScreen.new()
 	_lobby.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_lobby.default_url = ServerAddress.from_user_args(OS.get_cmdline_user_args())
-	add_child(_lobby)
+	_safe_frame.add_child(_lobby)
 	_lobby.create_pressed.connect(func(url: String, player_name: String) -> void:
 			_send_when_connected(url, {"type": "create_room", "name": player_name}))
 	_lobby.join_pressed.connect(func(url: String, player_name: String, code: String) -> void:
@@ -38,14 +46,23 @@ func _ready() -> void:
 
 	_table = TableScreen.new()
 	_table.visible = false
-	add_child(_table)
+	_safe_frame.add_child(_table)
 	_table.intent_chosen.connect(_send_online)
 	_table.leave_requested.connect(func() -> void: _send_online({"type": "leave_room"}))
 
 	_result = ResultScreen.new()
 	_result.visible = false
-	add_child(_result)
+	_safe_frame.add_child(_result)
 	_result.return_pressed.connect(func() -> void: _send_online({"type": "return_to_lobby"}))
+
+
+## Insets the screens by the safe area; runs again whenever the window changes (rotation).
+func _apply_safe_area() -> void:
+	var insets: Vector4 = WebViewport.safe_area()
+	_safe_frame.offset_left = insets.x
+	_safe_frame.offset_top = insets.y
+	_safe_frame.offset_right = -insets.z
+	_safe_frame.offset_bottom = -insets.w
 
 
 ## Sends [param intent] when the link is up; a dropped link was already reported.

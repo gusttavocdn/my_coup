@@ -1,0 +1,16 @@
+Reviewed-Content-Hash: src/client/web_viewport.gd b9d78dc7c711c653c21c2c9226d961e29735d6b5
+Reviewed-Content-Hash: src/client/ui_kit.gd 6039fca506883a19fd1455156df82225159a75da
+Reviewed-Content-Hash: src/client/ui_text.gd ed00b9a41745a1822c094d233e3a7e0c61c8382f
+Reviewed-Content-Hash: src/client/client_main.gd 97fd9101aa289f860b5bf7aad6ae2d31fb1836bb
+Reviewed-Content-Hash: src/client/lobby_screen.gd 9b5f1d6786dd9a175e40c07587db7ea80e6b6568
+Reviewed-Content-Hash: src/client/table_screen.gd 6aa6f5e6fa0ca7047252dd4c41da4cc3141da04b
+Reviewed-Content-Hash: src/client/action_bar.gd ef582de2af6460121c769aa41e6a80bf88d64952
+Reviewed-Content-Hash: src/client/rules_sheet.gd 3f32eb493abbaa4caf1344616d19d4d2af287e05
+Reviewed-Content-Hash: src/client/log_panel.gd f60fae2a7a11ed3816c162c9227c74306a476dc1
+Reviewed-Content-Hash: src/client/result_screen.gd aba3ed3cd64da2c762066237099bf7dd09be2351
+Reviewed-Content-Hash: src/client/target_screen.gd 6a12a8cd8ac8be3ce9bd5d58c4f0a5bbcf4423b1
+Reviewed-Content-Hash: src/client/reaction_screen.gd ab42a3895fda878043be4bd381ccdb2446d49a68
+Reviewed-Content-Hash: src/client/influence_loss_screen.gd c77d1c8af26230da50a46a31b62b79a0000cbf87
+Reviewed-Content-Hash: src/client/exchange_screen.gd 45f557988ce4e34e8c838e3f17f35e51630f1333
+Reviewed-Content-Hash: web/shell.html b639d7ac9eeb8d39b098f72b3ffad7e38e8505c6
+Reviewed-Content-Hash: export_presets.cfg 75c97ca20f9ce82e8bdc11ae43b52719df1425ed

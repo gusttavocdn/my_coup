@@ -326,7 +326,7 @@ func _actions(unit: float, context: Dictionary) -> Control:
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override("separation", int(round(10 * unit)))
 	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var touch: float = maxf(UiKit.MIN_TOUCH, 52 * unit)
+	var touch: float = maxf(UiKit.touch_height(), 52 * unit)
 	for character: String in context.blockers:
 		box.add_child(_block_button(character, unit, touch))
 	var row := HBoxContainer.new()

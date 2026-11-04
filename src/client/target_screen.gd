@@ -246,7 +246,7 @@ func _button_row(unit: float) -> Control:
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", int(round(10 * unit)))
 	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var touch: float = maxf(52 * unit, float(UiKit.MIN_TOUCH))
+	var touch: float = maxf(52 * unit, UiKit.touch_height())
 
 	var cancel := UiKit.button(UiText.CANCEL)
 	cancel.custom_minimum_size = Vector2(112 * unit, touch)

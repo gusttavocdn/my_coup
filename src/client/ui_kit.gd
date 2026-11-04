@@ -40,7 +40,17 @@ const WIDE_WINDOW: float = 1000.0
 ## Narrow windows scale so this many layout pixels span their width.
 const REFERENCE_WIDTH: float = 720.0
 const MIN_SCALE: float = 0.5
+## Smallest tappable height, in CSS (screen) pixels; see [method touch_height].
 const MIN_TOUCH: float = 56.0
+## Fingers move this many CSS pixels while tapping; beyond it a touch is a drag, not a tap.
+const DRAG_SLOP: float = 10.0
+## Layouts narrower than this (layout pixels) use the phone board of TableScreen.
+const NARROW_LAYOUT_WIDTH: float = 900.0
+## Landscape windows shorter than this (CSS pixels) are phones on their side.
+const SHORT_WINDOW: float = 500.0
+## Layout height a phone on its side is scaled to.
+const LANDSCAPE_HEIGHT: float = 520.0
+const _TOUCH_GROUP: StringName = &"touch_sized"
 const BASE_FONT_SIZE: int = 20
 const CARD_WIDTH: float = 120.0
 const SMALL_CARD_WIDTH: float = 72.0
@@ -52,6 +62,8 @@ const _WEIGHT_TAG: int = 0x77676874
 
 static var _fonts: Dictionary = {}
 static var _textures: Dictionary = {}
+## CSS pixels per layout pixel, set by [method fit_scale] (1.0 on wide desktop windows).
+static var layout_scale: float = 1.0
 
 
 ## The texture at [param path], kept alive for the whole session. Textures drawn
@@ -82,11 +94,40 @@ static func font(title: bool, weight: int, spacing: int = 0) -> FontVariation:
 
 ## Scales the whole UI to [param window]: 1.0 on wide windows, and in
 ## proportion to the width on narrow (phone) ones so the layout designed for
-## REFERENCE_WIDTH fills the screen with readable text. Connect it to
-## Window.size_changed as well as calling it once.
+## REFERENCE_WIDTH fills the screen with readable text. A short landscape window
+## (a phone on its side) is scaled by its height instead, so the wide board fits
+## without clipping. On the Web the window is measured in CSS pixels (the canvas
+## is device pixels, so the result is multiplied back by the pixel ratio).
+## Connect it to Window.size_changed as well as calling it once.
 static func fit_scale(window: Window) -> void:
-	var width: float = window.size.x
-	window.content_scale_factor = 1.0 if width >= WIDE_WINDOW else maxf(width / REFERENCE_WIDTH, MIN_SCALE)
+	var ratio: float = DisplayServer.screen_get_scale() if OS.has_feature("web") else 1.0
+	var css: Vector2 = Vector2(window.size) / ratio
+	var factor: float = 1.0
+	if css.x > css.y and css.y < SHORT_WINDOW:
+		factor = minf(css.y / LANDSCAPE_HEIGHT, css.x / (NARROW_LAYOUT_WIDTH + 5.0))
+	elif css.x < WIDE_WINDOW:
+		factor = maxf(css.x / REFERENCE_WIDTH, MIN_SCALE)
+	layout_scale = factor
+	window.content_scale_factor = factor * ratio
+	for node: Node in window.get_tree().get_nodes_in_group(_TOUCH_GROUP):
+		(node as Control).custom_minimum_size.y = touch_height()
+
+
+## [constant MIN_TOUCH] CSS pixels in layout pixels: what a tappable control's
+## minimum height must be so it is MIN_TOUCH high on the screen.
+static func touch_height() -> float:
+	return MIN_TOUCH / layout_scale
+
+
+## [param css_pixels] in layout pixels.
+static func css_to_layout(css_pixels: float) -> float:
+	return css_pixels / layout_scale
+
+
+## Gives [param control] the touch height now and after every rescale.
+static func touch_sized(control: Control) -> void:
+	control.custom_minimum_size.y = touch_height()
+	control.add_to_group(_TOUCH_GROUP)
 
 
 ## The one Theme every screen uses; set it on the root control.
@@ -132,7 +173,7 @@ static func box(fill: Color, border: Color, border_width: int, radius: int) -> S
 static func button(text: String) -> Button:
 	var made := Button.new()
 	made.text = text
-	made.custom_minimum_size = Vector2(0, MIN_TOUCH)
+	touch_sized(made)
 	return made
 
 

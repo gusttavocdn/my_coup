@@ -150,7 +150,7 @@ func _footer(unit: float) -> Control:
 	counter.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	box.add_child(counter)
 	var confirm := UiKit.button(CONFIRM)
-	confirm.custom_minimum_size = Vector2(0, maxf(UiKit.MIN_TOUCH, 56 * unit))
+	confirm.custom_minimum_size = Vector2(0, maxf(UiKit.touch_height(), 56 * unit))
 	confirm.add_theme_font_size_override("font_size", int(round(17 * unit)))
 	var fill: StyleBoxFlat = UiKit.box(UiKit.GOLD, UiKit.GOLD, 0, 12)
 	var muted: StyleBoxFlat = UiKit.box(Color("c9c6d4"), Color("c9c6d4"), 0, 12)

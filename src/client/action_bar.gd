@@ -52,7 +52,10 @@ func _medallion(action: String, coins: int, unit: float, narrow: bool) -> Medall
 	made.disabled = coins < int(definition.cost) \
 			or (coins >= RulesConfig.FORCED_COUP_COINS and action != RulesConfig.GOLPE)
 	made.refresh_size()
-	made.pressed.connect(func() -> void: action_chosen.emit(action))
+	# A drag that scrolls the bar sideways also releases over a medallion; that is not a tap.
+	made.pressed.connect(func() -> void:
+		if not made.dragged:
+			action_chosen.emit(action))
 	return made
 
 
@@ -73,6 +76,9 @@ class Medallion extends Button:
 	var ring: Color = UiKit.CREAM
 	var badge: String = ""
 	var caption: String = ""
+	## True when the pointer moved beyond the tap slop since it went down.
+	var dragged: bool = false
+	var _press_at: Vector2 = Vector2.ZERO
 
 	func _init() -> void:
 		flat = true
@@ -85,14 +91,23 @@ class Medallion extends Button:
 		var diameter: float = 64 * unit
 		var caption_width: float = UiKit.font(false, 600).get_string_size(
 				caption, HORIZONTAL_ALIGNMENT_LEFT, -1, int(round(13 * unit))).x
-		custom_minimum_size = Vector2(maxf(maxf(diameter + 18 * unit, 78 * unit), caption_width + 8 * unit),
-				diameter + 34 * unit)
+		custom_minimum_size = Vector2(
+				maxf(maxf(maxf(diameter + 18 * unit, 78 * unit), caption_width + 8 * unit), UiKit.touch_height()),
+				maxf(diameter + 34 * unit, UiKit.touch_height()))
+
+	func _gui_input(event: InputEvent) -> void:
+		if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+			_press_at = event.global_position
+			dragged = false
+		elif event is InputEventMouseMotion and (event.button_mask & MOUSE_BUTTON_MASK_LEFT) != 0:
+			if event.global_position.distance_to(_press_at) > UiKit.css_to_layout(UiKit.DRAG_SLOP):
+				dragged = true
 
 	func _draw() -> void:
 		var diameter: float = 64 * unit
 		var center := Vector2(size.x / 2.0, diameter / 2.0 + 2 * unit)
 		var shown_fill: Color = Color("b9b6c4") if disabled else (fill.darkened(0.25) if button_pressed or is_pressed() else fill)
-		var shown_ring: Color = Color("d8d4e0") if disabled else (UiKit.GOLD if is_hovered() else ring)
+		var shown_ring: Color = Color("d8d4e0") if disabled else (UiKit.GOLD if is_hovered() or is_pressed() else ring)
 		draw_circle(center, diameter / 2.0, shown_fill)
 		draw_arc(center, diameter / 2.0 - 1.5 * unit, 0.0, TAU, 48, shown_ring, maxf(2.0, 3 * unit), true)
 		if art != null:

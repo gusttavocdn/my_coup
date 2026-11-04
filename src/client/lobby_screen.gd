@@ -1,7 +1,12 @@
 class_name LobbyScreen
-extends CenterContainer
+extends Control
 ## Lobby: connect, create or join a room by code, see who is in it and (as
 ## host) start the match. It only emits signals; ClientMain talks to the server.
+## The form scrolls, and its viewport shrinks above the on-screen keyboard so the
+## field being typed in stays visible.
+
+## Seconds between two reads of the keyboard height while a field has focus.
+const KEYBOARD_POLL_SECONDS: float = 0.15
 
 signal create_pressed(url: String, player_name: String)
 signal join_pressed(url: String, player_name: String, code: String)
@@ -20,14 +25,28 @@ var _members: VBoxContainer
 var _start_button: Button
 var _status: Label
 var _copy_button: Button
+var _fullscreen_button: Button
 var _code: String = ""
+var _scroll: ScrollContainer
+var _keyboard: float = 0.0
+var _poll_left: float = 0.0
 
 
 func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	set_process(OS.has_feature("web"))
+	_scroll = ScrollContainer.new()
+	_scroll.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	_scroll.scroll_deadzone = int(UiKit.css_to_layout(UiKit.DRAG_SLOP))
+	add_child(_scroll)
+	var page := CenterContainer.new()
+	page.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	page.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_scroll.add_child(page)
 	var card := UiKit.panel(UiKit.PANEL, UiKit.GOLD, 2)
 	card.custom_minimum_size = Vector2(520, 0)
-	add_child(card)
+	page.add_child(card)
 
 	var column := VBoxContainer.new()
 	column.add_theme_constant_override("separation", 14)
@@ -53,6 +72,12 @@ func _ready() -> void:
 	var join := UiKit.button(UiText.JOIN_ROOM)
 	join.pressed.connect(func() -> void: join_pressed.emit(_url_edit.text, _name_edit.text, _code_edit.text))
 	_connect_box.add_child(join)
+	_fullscreen_button = UiKit.button(UiText.ENTER_FULLSCREEN)
+	_fullscreen_button.visible = WebViewport.can_fullscreen()
+	_fullscreen_button.pressed.connect(func() -> void:
+			WebViewport.enter_fullscreen()
+			_fullscreen_button.visible = false)
+	_connect_box.add_child(_fullscreen_button)
 
 	_room_box = VBoxContainer.new()
 	_room_box.add_theme_constant_override("separation", 10)
@@ -88,6 +113,7 @@ func _ready() -> void:
 func show_connect() -> void:
 	_connect_box.visible = true
 	_room_box.visible = false
+	_fullscreen_button.visible = WebViewport.can_fullscreen()
 	set_status("")
 
 
@@ -105,6 +131,24 @@ func show_room(lobby: Dictionary, my_peer: int) -> void:
 	var is_host: bool = lobby.host == my_peer
 	_start_button.visible = is_host
 	set_status("" if is_host else UiText.WAITING_HOST)
+
+
+## While a field has focus, shrinks the scroll area to what the on-screen keyboard
+## leaves free and scrolls the field into view.
+func _process(delta: float) -> void:
+	var focused: Control = get_viewport().gui_get_focus_owner()
+	var typing: bool = focused is LineEdit and is_ancestor_of(focused)
+	_poll_left -= delta
+	if _poll_left > 0.0 or not (typing or _keyboard > 0.0):
+		return
+	_poll_left = KEYBOARD_POLL_SECONDS
+	var height: float = WebViewport.keyboard_height() if typing else 0.0
+	if not is_equal_approx(height, _keyboard):
+		_keyboard = height
+		_scroll.offset_bottom = -height
+		if typing:
+			# The scroll area resizes on the next layout pass.
+			_scroll.ensure_control_visible.call_deferred(focused)
 
 
 ## A fan of three cards above the title, the lobby's decoration.
@@ -180,6 +224,9 @@ func _field(caption: String, value: String) -> LineEdit:
 	_connect_box.add_child(UiKit.label(caption, 18, UiKit.MUTED))
 	var edit := LineEdit.new()
 	edit.text = value
-	edit.custom_minimum_size = Vector2(0, UiKit.MIN_TOUCH)
+	UiKit.touch_sized(edit)
+	edit.focus_entered.connect(func() -> void:
+			_poll_left = 0.0
+			_scroll.ensure_control_visible.call_deferred(edit))
 	_connect_box.add_child(edit)
 	return edit

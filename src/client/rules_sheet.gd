@@ -79,6 +79,7 @@ func _frame(title: String) -> VBoxContainer:
 	card.add_child(stack)
 	_scroll = ScrollContainer.new()
 	_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	_scroll.scroll_deadzone = int(UiKit.css_to_layout(UiKit.DRAG_SLOP))
 	stack.add_child(_scroll)
 	# Buttons live outside the scroll area so they never scroll out of reach.
 	_footer = VBoxContainer.new()
@@ -120,6 +121,12 @@ func _build_menu() -> void:
 	var keep := UiKit.button(UiText.CONTINUE)
 	keep.pressed.connect(queue_free)
 	column.add_child(keep)
+	if WebViewport.can_fullscreen():
+		var fullscreen := UiKit.button(UiText.ENTER_FULLSCREEN)
+		fullscreen.pressed.connect(func() -> void:
+			WebViewport.enter_fullscreen()
+			queue_free())
+		column.add_child(fullscreen)
 	var leave := UiKit.button(UiText.LEAVE_MATCH)
 	leave.pressed.connect(func() -> void:
 		leave_requested.emit()

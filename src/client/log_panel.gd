@@ -19,6 +19,8 @@ func _init() -> void:
 	_lines.bbcode_enabled = true
 	_lines.fit_content = true
 	_lines.scroll_active = false
+	# Lets a vertical drag over the text reach the sheet's ScrollContainer.
+	_lines.mouse_filter = Control.MOUSE_FILTER_PASS
 	_lines.custom_minimum_size = Vector2(0, 20)
 	_lines.add_theme_font_size_override("normal_font_size", 14)
 	_lines.add_theme_font_size_override("bold_font_size", 14)
