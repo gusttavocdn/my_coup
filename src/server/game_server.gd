@@ -13,15 +13,15 @@ var registry: RoomRegistry
 var _socket: WebSocketMultiplayerPeer
 
 
-## Starts listening for WebSocket clients on [param port] (all interfaces).
+## Starts listening for WebSocket clients on [param port] and [param bind_address].
 ## Returns OK or the engine's Error code.
-func listen(port: int = DEFAULT_PORT, rng: RandomNumberGenerator = null) -> Error:
+func listen(port: int = DEFAULT_PORT, rng: RandomNumberGenerator = null, bind_address: String = "*") -> Error:
 	var seeded: RandomNumberGenerator = rng if rng != null else RandomNumberGenerator.new()
 	if rng == null:
 		seeded.randomize()
 	registry = RoomRegistry.new(seeded)
 	_socket = WebSocketMultiplayerPeer.new()
-	var error: Error = _socket.create_server(port)
+	var error: Error = _socket.create_server(port, bind_address)
 	if error != OK:
 		return error
 	multiplayer.multiplayer_peer = _socket

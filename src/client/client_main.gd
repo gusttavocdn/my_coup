@@ -11,7 +11,6 @@ var _table: TableScreen
 var _result: ResultScreen
 var _queued_intent: Dictionary = {}
 
-
 func _ready() -> void:
 	theme = UiKit.build_theme()
 	UiKit.fit_scale(get_window())
@@ -28,7 +27,7 @@ func _ready() -> void:
 
 	_lobby = LobbyScreen.new()
 	_lobby.set_anchors_preset(Control.PRESET_FULL_RECT)
-	_lobby.default_url = _url_from_args()
+	_lobby.default_url = ServerAddress.from_user_args(OS.get_cmdline_user_args())
 	add_child(_lobby)
 	_lobby.create_pressed.connect(func(url: String, player_name: String) -> void:
 			_send_when_connected(url, {"type": "create_room", "name": player_name}))
@@ -118,10 +117,3 @@ func _show_lobby() -> void:
 	_result.visible = false
 	_lobby.visible = true
 	_lobby.show_connect()
-
-
-func _url_from_args() -> String:
-	for argument in OS.get_cmdline_user_args():
-		if argument.begins_with("--url="):
-			return argument.trim_prefix("--url=")
-	return "ws://127.0.0.1:%d" % GameServer.DEFAULT_PORT

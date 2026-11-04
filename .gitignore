@@ -68,6 +68,7 @@ dist/
 # class_name fails to parse, while `godot --headless --path . --quit` still exits 0.
 *.translation
 export_presets.cfg
+!export_presets.cfg
 # Uncomment if using Godot:
 # *.import
 

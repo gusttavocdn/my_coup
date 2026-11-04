@@ -8,7 +8,7 @@ signal join_pressed(url: String, player_name: String, code: String)
 signal start_pressed
 signal leave_pressed
 
-var default_url: String = "ws://127.0.0.1:9080"
+var default_url: String = ServerAddress.default_url()
 
 var _connect_box: VBoxContainer
 var _room_box: VBoxContainer
@@ -68,8 +68,7 @@ func _ready() -> void:
 	_room_box.add_child(_room_title)
 	_copy_button = UiKit.button(UiText.COPY_CODE)
 	_copy_button.pressed.connect(func() -> void:
-			DisplayServer.clipboard_set(_code)
-			_copy_button.text = UiText.CODE_COPIED)
+			_copy_code())
 	_room_box.add_child(_copy_button)
 	_members = VBoxContainer.new()
 	_room_box.add_child(_members)
@@ -145,6 +144,36 @@ func _member_row(index: int, member_name: String, is_host: bool) -> Control:
 func set_status(text: String, is_error: bool = false) -> void:
 	_status.text = text
 	_status.add_theme_color_override("font_color", UiKit.DANGER if is_error else UiKit.MUTED)
+
+
+func _copy_code() -> void:
+	if OS.has_feature("web"):
+		# Async Clipboard API first; embedded or restricted browsers may deny it, so fall back
+		# to a hidden textarea + execCommand("copy"), which only needs the click's user activation.
+		JavaScriptBridge.eval("""
+			(function (text) {
+				const legacy = () => {
+					const area = document.createElement('textarea');
+					area.value = text;
+					area.style.position = 'fixed';
+					area.style.opacity = '0';
+					document.body.appendChild(area);
+					area.select();
+					try { document.execCommand('copy'); } catch (error) { console.warn('Could not copy room code:', error); }
+					document.body.removeChild(area);
+					const canvas = document.querySelector('canvas');
+					if (canvas) { canvas.focus(); }
+				};
+				if (navigator.clipboard && navigator.clipboard.writeText) {
+					navigator.clipboard.writeText(text).catch(legacy);
+				} else {
+					legacy();
+				}
+			})(%s);
+		""" % JSON.stringify(_code))
+	else:
+		DisplayServer.clipboard_set(_code)
+	_copy_button.text = UiText.CODE_COPIED
 
 
 func _field(caption: String, value: String) -> LineEdit:
