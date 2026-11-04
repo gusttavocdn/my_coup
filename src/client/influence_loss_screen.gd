@@ -30,6 +30,17 @@ func setup(view: Dictionary, cause: String) -> void:
 	_render()
 
 
+## Takes a fresh server view while the screen is already open (a second loss in
+## a row, e.g. a failed bluff followed by the assassination): nothing is picked
+## and the button is live again.
+func update_view(view: Dictionary, cause: String) -> void:
+	_view = view
+	_cause = cause
+	_selected = -1
+	_sent = false
+	_render()
+
+
 ## The picked card's index in my hand, or -1.
 func selected_index() -> int:
 	return _selected

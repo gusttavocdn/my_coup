@@ -166,6 +166,9 @@ func _place_toast(unit: float) -> void:
 
 ## Remembers why I lost an influence when the events say so (a challenge).
 func _note_loss_cause(event: Dictionary, me: int) -> void:
+	if event.type == "influence_lost" and event.player == me:
+		_loss_cause = ""
+		return
 	if event.type == "challenge_lost" and event.challenger == me:
 		_loss_cause = "Sua contestação contra %s falhou." % _name(event.claimant)
 	elif event.type == "challenge_won" and event.claimant == me:
@@ -192,6 +195,8 @@ func _sync_answer_screens() -> void:
 		_loss_screen.setup(_view, _loss_cause if not _loss_cause.is_empty() else _declared_cause)
 		_loss_screen.chosen.connect(func(index: int) -> void:
 				intent_chosen.emit({"type": "lose_influence", "card_index": index}))
+	elif needs_loss and _fresh_update:
+		_loss_screen.update_view(_view, _loss_cause if not _loss_cause.is_empty() else _declared_cause)
 	elif not needs_loss:
 		_close_loss_screen()
 	if needs_exchange and (_exchange_screen == null or not is_instance_valid(_exchange_screen)):
@@ -200,6 +205,8 @@ func _sync_answer_screens() -> void:
 		_exchange_screen.setup(_view)
 		_exchange_screen.confirmed.connect(func(keep: Array) -> void:
 				intent_chosen.emit({"type": "exchange", "keep": keep}))
+	elif needs_exchange and _fresh_update:
+		_exchange_screen.update_view(_view)
 	elif not needs_exchange:
 		_close_exchange_screen()
 

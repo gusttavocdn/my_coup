@@ -29,6 +29,15 @@ func setup(view: Dictionary) -> void:
 	_render()
 
 
+## Takes a fresh server view while the screen is already open: nothing is
+## chosen and the button is live again.
+func update_view(view: Dictionary) -> void:
+	_view = view
+	_picks.clear()
+	_sent = false
+	_render()
+
+
 ## The chosen pool indices, in the order they were picked.
 func picks() -> Array[int]:
 	return _picks.duplicate()
