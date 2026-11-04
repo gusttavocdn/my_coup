@@ -51,6 +51,11 @@ const ERRORS: Dictionary = {
 }
 
 const TITLE: String = "Coup Online"
+const TAGLINE: String = "Blefe, desafie e sobreviva."
+const COPY_CODE: String = "Copiar código"
+const CODE_COPIED: String = "Código copiado"
+const HOST_TAG: String = "ANFITRIÃO"
+const WINNER_CAPTION: String = "VENCEDOR"
 const SERVER_LABEL: String = "Servidor"
 const NAME_LABEL: String = "Seu nome"
 const CODE_LABEL: String = "Código da sala"

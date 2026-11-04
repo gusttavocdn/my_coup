@@ -22,10 +22,17 @@ const CODE_LENGTH: int = 4
 var _rooms: Dictionary = {}
 var _room_of_peer: Dictionary = {}
 var _rng: RandomNumberGenerator
+var _clock: Callable
+var _response_seconds: float
 
 
-func _init(rng: RandomNumberGenerator) -> void:
+## [param clock] returns milliseconds and is shared with every room (default: the
+## engine's tick counter); [param response_seconds] is the response window length.
+func _init(rng: RandomNumberGenerator, clock: Callable = Callable(),
+		response_seconds: float = RulesConfig.RESPONSE_SECONDS) -> void:
 	_rng = rng
+	_clock = clock if clock.is_valid() else Time.get_ticks_msec
+	_response_seconds = response_seconds
 
 
 ## Applies [param intent] from [param peer]; see the class comment.
@@ -68,6 +75,18 @@ func disconnect_peer(peer: int) -> Array[Dictionary]:
 	return messages
 
 
+## Lets every room's expired response window time out; returns the update
+## messages for the rooms where something happened. Call it every frame.
+func tick() -> Array[Dictionary]:
+	var messages: Array[Dictionary] = []
+	var now: int = int(_clock.call())
+	for room: Room in _rooms.values():
+		var result: Dictionary = room.tick(now)
+		if not result.events.is_empty():
+			messages.append_array(_update_messages(room, result.events))
+	return messages
+
+
 ## The room [param peer] is in, or null.
 func room_of(peer: int) -> Room:
 	var code: Variant = _room_of_peer.get(peer)
@@ -84,7 +103,7 @@ func _create_room(peer: int, intent: Dictionary) -> Array[Dictionary]:
 		return [_error(peer, "already_in_room")]
 	if not intent.get("name") is String:
 		return [_error(peer, "invalid_intent")]
-	var room := Room.new(_new_code(), _rng)
+	var room := Room.new(_new_code(), _rng, _clock, _response_seconds)
 	var joined: Dictionary = room.join(peer, intent.name)
 	if not joined.ok:
 		return [_error(peer, joined.error)]

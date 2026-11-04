@@ -6,8 +6,9 @@ extends Control
 ## narrow ones the phone board (390x844); both are laid out from the same pieces
 ## and rebuilt on every update or resize.
 ##
-## Response, loss and exchange prompts still use plain buttons in a card at the
-## bottom (a stopgap until the reaction and loss screens replace them).
+## Answers that need a full screen (target, reaction, influence loss, exchange)
+## are overlays owned here: opened when the server's view asks for them and
+## closed when it moves on.
 
 signal intent_chosen(intent: Dictionary)
 signal leave_requested
@@ -22,15 +23,20 @@ const NARROW_DESIGN: Vector2 = Vector2(390, 844)
 var _view: Dictionary = {}
 var _needs_my_answer: bool = false
 var _selected_action: String = ""
-var _exchange_picks: Array[int] = []
+var _loss_cause: String = ""
+## Set while a Golpe or an Assassinar aimed at me is in play, for the loss screen.
+var _declared_cause: String = ""
+var _toast: Control
 var _log_lines: Array[String] = []
 var _toast_text: String = ""
 var _awaiting_server: bool = false
 var _target_screen: TargetScreen
+var _reaction: ReactionScreen
+var _fresh_update: bool = false
 
 var _stage: Control
-var _prompt_text: Label
-var _prompt_buttons: HFlowContainer
+var _loss_screen: InfluenceLossScreen
+var _exchange_screen: ExchangeScreen
 
 
 func _ready() -> void:
@@ -47,7 +53,10 @@ func reset() -> void:
 	_view = {}
 	_log_lines.clear()
 	_close_target_screen()
-	_exchange_picks.clear()
+	_close_reaction()
+	_close_answer_screens()
+	_loss_cause = ""
+	_declared_cause = ""
 	_needs_my_answer = false
 	_toast_text = ""
 
@@ -64,15 +73,18 @@ func apply_update(view: Dictionary, events: Array) -> void:
 	_awaiting_server = false
 	# Any update means the state moved on, so a half-made action choice is void.
 	_close_target_screen()
-	if view.phase != RulesEngine.PHASE_AWAITING_EXCHANGE:
-		_exchange_picks.clear()
+	if view.phase != RulesEngine.PHASE_AWAITING_INFLUENCE_LOSS:
+		_loss_cause = ""
 	for event: Dictionary in events:
+		_note_loss_cause(event, view.you.seat)
 		var line: String = _describe(event)
 		if not line.is_empty():
 			_log_lines.append(line)
 	while _log_lines.size() > MAX_LOG_LINES:
 		_log_lines.pop_front()
+	_fresh_update = true
 	_render()
+	_fresh_update = false
 
 
 ## Shows a server error code above the actions.
@@ -100,13 +112,118 @@ func _render() -> void:
 	_add_last_action(narrow, unit, vscale)
 	_add_hand(narrow, unit, vscale, my_player)
 	_add_bottom(narrow, unit, vscale, my_player)
+	_sync_reaction()
+	_sync_answer_screens()
+	_place_toast(unit)
+
+
+## True while I may still answer an open challenge, block or block-challenge window.
+func _response_open() -> bool:
+	var me: int = _view.you.seat
+	var window: Dictionary = _view.window
+	return not window.is_empty() and window.eligible.has(me) and not window.passed.has(me)
+
+
+## Shows the reaction screen while a response is open, refreshing its countdown
+## on every server update (not on a mere resize), and drops it otherwise.
+func _sync_reaction() -> void:
+	if not _response_open():
+		_close_reaction()
+		return
+	if _reaction == null or not is_instance_valid(_reaction):
+		_reaction = ReactionScreen.new()
+		add_child(_reaction)
+		_reaction.setup(_view)
+		_reaction.responded.connect(func(intent: Dictionary) -> void: intent_chosen.emit(intent))
+	elif _fresh_update:
+		_reaction.update_view(_view)
+
+
+func _close_reaction() -> void:
+	if _reaction != null and is_instance_valid(_reaction):
+		_reaction.queue_free()
+	_reaction = null
+
+
+## A red-bordered pill with the last server error, above every overlay.
+func _place_toast(unit: float) -> void:
+	if _toast != null and is_instance_valid(_toast):
+		_toast.queue_free()
+	_toast = null
+	if _toast_text.is_empty():
+		return
+	var pill := UiKit.panel(UiKit.PANEL_RAISED, UiKit.DANGER, 2)
+	pill.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var label := UiKit.label(_toast_text, int(round(16 * unit)), UiKit.DANGER_DARK)
+	label.autowrap_mode = TextServer.AUTOWRAP_OFF
+	pill.add_child(label)
+	add_child(pill)
+	var pill_size: Vector2 = pill.get_combined_minimum_size()
+	pill.size = pill_size
+	pill.position = Vector2((size.x - pill_size.x) / 2.0, 70 * unit)
+	_toast = pill
+
+
+## Remembers why I lost an influence when the events say so (a challenge).
+func _note_loss_cause(event: Dictionary, me: int) -> void:
+	if event.type == "challenge_lost" and event.challenger == me:
+		_loss_cause = "Sua contestação contra %s falhou." % _name(event.claimant)
+	elif event.type == "challenge_won" and event.claimant == me:
+		_loss_cause = "Você foi pego blefando."
+	elif event.type == "action_declared" and event.target == me:
+		match event.action:
+			"assassinar":
+				_declared_cause = "%s assassinou você." % _name(event.actor)
+			"golpe":
+				_declared_cause = "%s deu um golpe de estado em você." % _name(event.actor)
+	elif event.type == "turn_started":
+		_declared_cause = ""
+
+
+## Opens the loss or exchange screen when the match waits for me to choose, and
+## drops them as soon as the view says otherwise.
+func _sync_answer_screens() -> void:
+	var me: int = _view.you.seat
+	var needs_loss: bool = _view.phase == RulesEngine.PHASE_AWAITING_INFLUENCE_LOSS and _view.loser == me
+	var needs_exchange: bool = _view.phase == RulesEngine.PHASE_AWAITING_EXCHANGE and _view.exchange.player == me
+	if needs_loss and (_loss_screen == null or not is_instance_valid(_loss_screen)):
+		_loss_screen = InfluenceLossScreen.new()
+		add_child(_loss_screen)
+		_loss_screen.setup(_view, _loss_cause if not _loss_cause.is_empty() else _declared_cause)
+		_loss_screen.chosen.connect(func(index: int) -> void:
+				intent_chosen.emit({"type": "lose_influence", "card_index": index}))
+	elif not needs_loss:
+		_close_loss_screen()
+	if needs_exchange and (_exchange_screen == null or not is_instance_valid(_exchange_screen)):
+		_exchange_screen = ExchangeScreen.new()
+		add_child(_exchange_screen)
+		_exchange_screen.setup(_view)
+		_exchange_screen.confirmed.connect(func(keep: Array) -> void:
+				intent_chosen.emit({"type": "exchange", "keep": keep}))
+	elif not needs_exchange:
+		_close_exchange_screen()
+
+
+func _close_loss_screen() -> void:
+	if _loss_screen != null and is_instance_valid(_loss_screen):
+		_loss_screen.queue_free()
+	_loss_screen = null
+
+
+func _close_exchange_screen() -> void:
+	if _exchange_screen != null and is_instance_valid(_exchange_screen):
+		_exchange_screen.queue_free()
+	_exchange_screen = null
+
+
+func _close_answer_screens() -> void:
+	_close_loss_screen()
+	_close_exchange_screen()
 
 
 func _compute_needs_my_answer() -> bool:
 	var me: int = _view.you.seat
-	var window: Dictionary = _view.window
-	var response_open: bool = not window.is_empty() and window.eligible.has(me) and not window.passed.has(me)
-	return response_open \
+	return _response_open() \
 			or (_view.phase == RulesEngine.PHASE_AWAITING_INFLUENCE_LOSS and _view.loser == me) \
 			or (_view.phase == RulesEngine.PHASE_AWAITING_EXCHANGE and _view.exchange.player == me)
 
@@ -274,14 +391,6 @@ func _add_bottom(narrow: bool, unit: float, vscale: float, my_player: Dictionary
 	var bar_y: float = title_y + (74 if narrow else 78) * unit
 	if show_actions:
 		_add_action_bar(narrow, unit, bar_y, int(my_player.coins))
-	elif not exiled and _needs_my_answer:
-		_add_prompt_card(unit)
-	if not _toast_text.is_empty():
-		var toast := UiKit.label(_toast_text, int(round(16 * unit)), UiKit.DANGER_DARK)
-		toast.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		toast.position = Vector2(size.x * 0.05, title_y - (100 if narrow else 28) * unit)
-		toast.size = Vector2(size.x * 0.9, 24 * unit)
-		_stage.add_child(toast)
 	_add_coins_and_log(narrow, unit, title_y, int(my_player.coins))
 
 
@@ -378,104 +487,6 @@ func _add_coins_and_log(narrow: bool, unit: float, title_y: float, coins: int) -
 	coins_card.position = Vector2(size.x - card_size.x - 24 * unit, size.y - card_size.y - 30 * unit)
 
 
-# --- stopgap prompt card ---------------------------------------------------
-
-func _add_prompt_card(unit: float) -> void:
-	var card := UiKit.panel(UiKit.PANEL_RAISED, UiKit.GOLD, 2)
-	var column := VBoxContainer.new()
-	column.add_theme_constant_override("separation", int(round(8 * unit)))
-	card.add_child(column)
-	_prompt_text = UiKit.label("", int(round(18 * unit)), UiKit.INK)
-	column.add_child(_prompt_text)
-	_prompt_buttons = HFlowContainer.new()
-	_prompt_buttons.add_theme_constant_override("h_separation", int(round(8 * unit)))
-	_prompt_buttons.add_theme_constant_override("v_separation", int(round(8 * unit)))
-	column.add_child(_prompt_buttons)
-	_fill_prompt()
-	# On wide screens keep clear of the log card (left) and the coin card (right).
-	var width: float = minf(size.x * 0.92, 980 * unit) if size.x < NARROW_WIDTH else size.x - 2 * 350 * unit
-	# Wrapping text and buttons need a width to be measured against.
-	_prompt_text.custom_minimum_size = Vector2(width - 40 * unit, 0)
-	_prompt_buttons.custom_minimum_size = Vector2(width - 40 * unit, 0)
-	card.custom_minimum_size = Vector2(width, 0)
-	_stage.add_child(card)
-	var card_size: Vector2 = card.get_combined_minimum_size()
-	card.size = Vector2(width, card_size.y)
-	card.position = Vector2((size.x - width) / 2.0, size.y - card_size.y - 70 * unit)
-
-
-func _fill_prompt() -> void:
-	var me: int = _view.you.seat
-	var window: Dictionary = _view.window
-	var pending: Dictionary = _view.pending_action
-	var response_open: bool = not window.is_empty() and window.eligible.has(me) and not window.passed.has(me)
-	match _view.phase:
-		RulesEngine.PHASE_AWAITING_INFLUENCE_LOSS:
-			_prompt_text.text = UiText.LOSE_PROMPT
-			for index in range(_view.you.hand.size()):
-				var choice: int = index
-				var button := UiKit.button(UiText.character(_view.you.hand[index]))
-				button.pressed.connect(func() -> void:
-						intent_chosen.emit({"type": "lose_influence", "card_index": choice}))
-				_prompt_buttons.add_child(button)
-		RulesEngine.PHASE_AWAITING_EXCHANGE:
-			_render_exchange_prompt()
-		RulesEngine.PHASE_AWAITING_CHALLENGE, RulesEngine.PHASE_AWAITING_BLOCK_CHALLENGE:
-			if response_open:
-				_prompt_text.text = _claim_prompt(window, pending)
-				_add_intent_button(UiText.CHALLENGE, {"type": "challenge"})
-				_add_intent_button(UiText.PASS, {"type": "pass"})
-		RulesEngine.PHASE_AWAITING_BLOCK:
-			if response_open:
-				_render_block_prompt(pending, me)
-
-
-func _render_block_prompt(pending: Dictionary, me: int) -> void:
-	var against: String = UiText.AGAINST_YOU if pending.target == me else ""
-	_prompt_text.text = UiText.BLOCK_PROMPT % [_name(pending.actor), UiText.action(pending.action), against]
-	var blockers: Array = RulesConfig.BLOCKS[pending.action].blockers
-	for character: String in blockers:
-		_add_intent_button(UiText.BLOCK_AS % UiText.character(character), {"type": "block", "character": character})
-	_add_intent_button(UiText.PASS, {"type": "pass"})
-
-
-func _render_exchange_prompt() -> void:
-	var pool: Array = _view.you.hand + _view.exchange.drawn
-	var keep_count: int = _view.you.hand.size()
-	_prompt_text.text = UiText.EXCHANGE_PROMPT % keep_count
-	var confirm := UiKit.button(UiText.CONFIRM)
-	confirm.disabled = _exchange_picks.size() != keep_count
-	confirm.pressed.connect(func() -> void:
-			intent_chosen.emit({"type": "exchange", "keep": _exchange_picks.duplicate()}))
-	for index in range(pool.size()):
-		var pool_index: int = index
-		var button := UiKit.button(UiText.character(pool[index]))
-		button.toggle_mode = true
-		button.button_pressed = _exchange_picks.has(pool_index)
-		button.toggled.connect(func(on: bool) -> void:
-				if on and not _exchange_picks.has(pool_index):
-					_exchange_picks.append(pool_index)
-				elif not on:
-					_exchange_picks.erase(pool_index)
-				confirm.disabled = _exchange_picks.size() != keep_count)
-		_prompt_buttons.add_child(button)
-	_prompt_buttons.add_child(confirm)
-
-
-func _claim_prompt(window: Dictionary, pending: Dictionary) -> String:
-	var claimant: String = _name(window.claimant)
-	var claim: String = UiText.character(window.claim)
-	if _view.phase == RulesEngine.PHASE_AWAITING_BLOCK_CHALLENGE:
-		return UiText.BLOCK_CLAIM_PROMPT % [claimant, claim]
-	return UiText.CLAIM_PROMPT % [claimant, claim, UiText.action(pending.action)]
-
-
-func _add_intent_button(caption: String, intent: Dictionary) -> void:
-	var button := UiKit.button(caption)
-	button.pressed.connect(func() -> void: intent_chosen.emit(intent))
-	_prompt_buttons.add_child(button)
-
-
 # --- helpers ---------------------------------------------------------------
 
 func _name(seat: int) -> String:
@@ -518,6 +529,8 @@ func _describe(event: Dictionary) -> String:
 			return "A ação perdeu o alvo."
 		"exchange_started":
 			return "%s troca cartas com o baralho." % _name(event.player)
+		"response_timeout":
+			return "%s não respondeu a tempo." % _name(event.player)
 		"game_over":
 			return UiText.GAME_OVER % _name(event.winner)
 	return ""

@@ -29,6 +29,10 @@ const ASSASSINAR: String = "assassinar"
 const EXTORQUIR: String = "extorquir"
 const TROCAR: String = "trocar"
 
+## Seconds a player has to answer an open response window (challenge, block or
+## challenge of a block) before the server passes for them.
+const RESPONSE_SECONDS: float = 8.0
+
 ## Cards an Embaixador draws from the Court deck when exchanging.
 const EXCHANGE_DRAW: int = 2
 

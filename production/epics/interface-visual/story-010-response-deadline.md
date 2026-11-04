@@ -1,12 +1,12 @@
 # Story 010: Prazo de resposta no servidor
 
 > **Epic**: interface-visual
-> **Status**: Ready
+> **Status**: Complete
 > **Layer**: Core
 > **Type**: Integration
 > **Estimate**: M
 > **Manifest Version**: N/A (minimal — no control manifest)
-> **Last Updated**: —
+> **Last Updated**: 2026-11-03
 
 ## Context
 
@@ -53,10 +53,12 @@ Keep `RulesEngine` untouched when possible: the room calls `pass_response` for e
 
 ## Files
 
-- `src/server/room.gd`, `src/server/room_registry.gd`, `src/server/game_server.gd`, `src/rules/rules_config.gd` (or a server config file)
-- `tests/integration/server/response_deadline_test.gd`
-
----
+- `src/rules/rules_config.gd` (RESPONSE_SECONDS)
+- `src/server/room.gd` (deadline, tick, window.seconds_left/total_seconds)
+- `src/server/room_registry.gd` (clock, tick)
+- `src/server/game_server.gd` (_process ticks the registry)
+- `src/client/table_screen.gd` (log line for response_timeout)
+- `tests/integration/server/response_deadline_test.gd` (8 tests, fake clock)
 
 ## QA Test Cases
 
@@ -68,7 +70,7 @@ Keep `RulesEngine` untouched when possible: the room calls `pass_response` for e
 
 **Story Type**: Integration
 **Required evidence**: `tests/integration/server/response_deadline_test.gd` OR playtest doc
-**Status**: [ ] Not yet created
+**Status**: [x] 8 gdUnit4 integration tests pass (full suite 72/72, exit 0)
 
 ---
 
@@ -76,3 +78,10 @@ Keep `RulesEngine` untouched when possible: the room calls `pass_response` for e
 
 - Depends on: `production/epics/coup-online/story-004-match-server-hidden-state.md`
 - Unlocks: `production/epics/interface-visual/story-011-reaction-screen.md`
+
+## Completion Notes
+**Completed**: 2026-11-03
+**Criteria**: 9/9 passing (GameServer ticking checked in a live run: server plus two client processes, the window timed out at 8 s and both clients got the update; scratch script not retained)
+**Deviations**: Advisory — table_screen.gd gained one log line for response_timeout; the engine-generated .uid of the test file is not listed under Files.
+**Test Evidence**: tests/integration/server/response_deadline_test.gd (8 tests; full suite 72/72)
+**Reviewed by**: self, no independent review

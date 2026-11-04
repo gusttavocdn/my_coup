@@ -5,8 +5,15 @@ extends RefCounted
 ##
 ## Clients only send intents (see handle_intent); every view built here is
 ## filtered so a player sees their own cards and nothing else that is hidden.
+##
+## Only response windows (challenge, block, challenge of a block) have a
+## deadline: tick() makes the players who have not answered pass once it is
+## reached. A player's own turn, an influence loss and an Embaixador exchange
+## wait indefinitely.
 
 const MAX_NAME_LENGTH: int = 16
+## Deadline value while no response window is open.
+const NO_DEADLINE: int = -1
 
 var code: String = ""
 ## Peer id of the host, who may start the match.
@@ -17,11 +24,21 @@ var started: bool = false
 var engine: RulesEngine = null
 
 var _rng: RandomNumberGenerator
+## Returns the current time in milliseconds; injectable so tests do not sleep.
+var _clock: Callable
+var _response_ms: int = 0
+## Clock time (ms) at which the open response window times out, or NO_DEADLINE.
+var _deadline_ms: int = NO_DEADLINE
 
 
-func _init(room_code: String, rng: RandomNumberGenerator) -> void:
+## [param clock] returns milliseconds (default: the engine's tick counter);
+## [param response_seconds] is how long a response window stays open.
+func _init(room_code: String, rng: RandomNumberGenerator, clock: Callable = Callable(),
+		response_seconds: float = RulesConfig.RESPONSE_SECONDS) -> void:
 	code = room_code
 	_rng = rng
+	_clock = clock if clock.is_valid() else Time.get_ticks_msec
+	_response_ms = int(round(response_seconds * 1000.0))
 
 
 ## Adds [param peer] to the lobby. Returns {"ok", "error"}.
@@ -57,6 +74,7 @@ func start(peer: int) -> Dictionary:
 		members[seat].seat = seat
 	engine = new_engine
 	started = true
+	_deadline_ms = NO_DEADLINE
 	return result
 
 
@@ -67,6 +85,36 @@ func start(peer: int) -> Dictionary:
 ## Returns the engine's {"ok", "error", "events"}; malformed intents are
 ## rejected with invalid_intent and change nothing.
 func handle_intent(peer: int, intent: Dictionary) -> Dictionary:
+	var result: Dictionary = _apply_intent(peer, intent)
+	if result.ok:
+		_update_deadline(result.events)
+	return result
+
+
+## Makes every player who has not answered the open response window pass once
+## its deadline is reached ([param now_ms] on the room's clock). The window then
+## closes through the normal engine path. Returns {"events": Array}: a
+## "response_timeout" {"player": seat} per straggler followed by the engine's
+## own events; empty when there is no open window or the deadline is not
+## reached yet.
+func tick(now_ms: int) -> Dictionary:
+	var events: Array = []
+	if not started or _deadline_ms == NO_DEADLINE or now_ms < _deadline_ms \
+			or engine.state.window.is_empty():
+		return {"events": events}
+	var stragglers: Array = []
+	for seat: int in engine.state.window.eligible:
+		if not engine.state.window.passed.has(seat):
+			stragglers.append(seat)
+	for seat: int in stragglers:
+		events.append({"type": "response_timeout", "player": seat})
+		var result: Dictionary = engine.pass_response(seat)
+		events.append_array(result.events)
+	_update_deadline(events)
+	return {"events": events}
+
+
+func _apply_intent(peer: int, intent: Dictionary) -> Dictionary:
 	if not started:
 		return _reject("match_not_started")
 	var index: int = _member_index(peer)
@@ -176,6 +224,9 @@ func view_for(peer: int) -> Dictionary:
 		view.standings = _standings()
 	if not state.window.is_empty():
 		view.window = state.window.duplicate(true)
+		if _deadline_ms != NO_DEADLINE:
+			view.window.total_seconds = _response_ms / 1000.0
+			view.window.seconds_left = maxf(0.0, (_deadline_ms - _now()) / 1000.0)
 	if not state.exchange.is_empty():
 		view.exchange = {"player": state.exchange.player}
 		if state.exchange.player == members[index].seat:
@@ -218,8 +269,25 @@ func seat_of(peer: int) -> int:
 func _reset_to_lobby() -> void:
 	started = false
 	engine = null
+	_deadline_ms = NO_DEADLINE
 	for member: Dictionary in members:
 		member.seat = -1
+
+
+## A new window gets a fresh deadline; no open window means no deadline. Called
+## with the events of every engine step.
+func _update_deadline(events: Array) -> void:
+	if engine.state.window.is_empty():
+		_deadline_ms = NO_DEADLINE
+		return
+	for event: Dictionary in events:
+		if event.get("type") == "window_opened":
+			_deadline_ms = _now() + _response_ms
+			return
+
+
+func _now() -> int:
+	return int(_clock.call())
 
 
 func _member_index(peer: int) -> int:

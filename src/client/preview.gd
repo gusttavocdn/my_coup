@@ -49,7 +49,23 @@ func _ready() -> void:
 	var table := TableScreen.new()
 	add_child(table)
 	table.set_room_code(code)
-	table.apply_update(room.view_for(1), events)
+	var view: Dictionary = room.view_for(1)
+	if state.ends_with("urgent"):
+		view.window.seconds_left = 2.0
+	table.apply_update(view, events)
+	if state == "loss_pick" and table._loss_screen != null:
+		table._loss_screen.select(0)
+	if state.begins_with("exchange") and table._exchange_screen != null:
+		if state == "exchange_full":
+			table._exchange_screen.toggle(0)
+			table._exchange_screen.toggle(2)
+		elif state == "exchange_one":
+			table._exchange_screen.toggle(0)
+	if state == "toast":
+		table.show_error("not_your_turn")
+	if table._reaction != null:
+		# A still must not count down while it is captured.
+		table._reaction.frozen = true
 	if state.begins_with("target"):
 		# What a tap on a targeted medallion does; "_pick" also taps Bia's avatar.
 		table._on_action_chosen(RulesConfig.ASSASSINAR if state.contains("ass") else RulesConfig.EXTORQUIR)
@@ -182,20 +198,27 @@ func _stage(state: String) -> Array:
 			room.engine.state.players[0].coins = 10
 		"waiting":
 			_collect(events, _registry.handle(1, {"type": "action", "action": "renda"}))
-		"challenge":
+		"challenge", "challenge_urgent":
 			_collect(events, _registry.handle(1, {"type": "action", "action": "renda"}))
 			_collect(events, _registry.handle(2, {"type": "action", "action": "taxas"}))
+		"block_challenge":
+			room.engine.state.players[1].coins = 3
+			_collect(events, _registry.handle(1, {"type": "action", "action": "renda"}))
+			_collect(events, _registry.handle(2, {"type": "action", "action": "assassinar", "target": 2}))
+			_collect(events, _registry.handle(1, {"type": "pass"}))
+			_collect(events, _registry.handle(3, {"type": "pass"}))
+			_collect(events, _registry.handle(3, {"type": "block", "character": "condessa"}))
 		"block":
 			room.engine.state.players[1].coins = 3
 			_collect(events, _registry.handle(1, {"type": "action", "action": "renda"}))
 			_collect(events, _registry.handle(2, {"type": "action", "action": "assassinar", "target": 0}))
 			_collect(events, _registry.handle(1, {"type": "pass"}))
 			_collect(events, _registry.handle(3, {"type": "pass"}))
-		"loss":
+		"loss", "loss_pick":
 			room.engine.state.players[1].coins = 7
 			_collect(events, _registry.handle(1, {"type": "action", "action": "renda"}))
 			_collect(events, _registry.handle(2, {"type": "action", "action": "golpe", "target": 0}))
-		"exchange":
+		"exchange", "exchange_full", "exchange_one":
 			room.engine.state.players[0].hand = ["embaixador", "duque"] as Array[String]
 			room.engine.state.deck = ["capitao", "assassino"] as Array[String]
 			_collect(events, _registry.handle(1, {"type": "action", "action": "trocar"}))

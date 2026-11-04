@@ -1,12 +1,12 @@
 # Story 011: Tela de reação
 
 > **Epic**: interface-visual
-> **Status**: Ready
+> **Status**: Complete
 > **Layer**: Presentation
 > **Type**: UI
 > **Estimate**: M
 > **Manifest Version**: N/A (minimal — no control manifest)
-> **Last Updated**: —
+> **Last Updated**: 2026-11-03
 
 ## Context
 
@@ -51,9 +51,10 @@ The countdown counts down locally between server updates from the last `seconds_
 
 ## Files
 
-- `src/client/reaction_screen.gd`, `src/client/table_screen.gd` (wire-up), `src/client/ui_text.gd`, `src/client/preview.gd`
-
----
+- `src/client/reaction_screen.gd` (new)
+- `src/client/table_screen.gd` (shows it while a response is open; stopgap response buttons removed)
+- `src/client/preview.gd` (challenge, block, block_challenge, *_urgent states)
+- `production/qa/evidence/story-011-reaction-screen/`
 
 ## QA Test Cases
 
@@ -65,7 +66,7 @@ The countdown counts down locally between server updates from the last `seconds_
 
 **Story Type**: UI
 **Required evidence**: a retained screenshot of each screen touched, in `production/qa/evidence/story-011-reaction-screen/`
-**Status**: [ ] Not yet created
+**Status**: [x] Captured 2026-11-03 — desktop (1280x720) and phone (540x960): challenge, block, block-challenge, urgent countdown
 
 ---
 
@@ -73,3 +74,10 @@ The countdown counts down locally between server updates from the last `seconds_
 
 - Depends on: `production/epics/interface-visual/story-008-new-table.md`, `production/epics/interface-visual/story-010-response-deadline.md`
 - Unlocks: None
+
+## Completion Notes
+**Completed**: 2026-11-03
+**Criteria**: 9/9 passing (button intents and on-expiry removal confirmed by the user, not captured)
+**Deviations**: Advisory — "afirma ter" / "não tem" use the player name instead of a pronoun; the screen is opaque rather than showing a dimmed table. reaction_screen.gd.uid (engine-generated) not listed under Files.
+**Test Evidence**: production/qa/evidence/story-011-reaction-screen/ (8 screenshots, stamped; tests waived at qa.level minimal)
+**Reviewed by**: self, no independent review

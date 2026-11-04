@@ -44,6 +44,11 @@ func receive_message(_message: Dictionary) -> void:
 	pass
 
 
+func _process(_delta: float) -> void:
+	if registry != null:
+		_deliver(registry.tick())
+
+
 func _on_peer_disconnected(peer: int) -> void:
 	_deliver(registry.disconnect_peer(peer))
 

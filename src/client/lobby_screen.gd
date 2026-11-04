@@ -19,6 +19,8 @@ var _room_title: Label
 var _members: VBoxContainer
 var _start_button: Button
 var _status: Label
+var _copy_button: Button
+var _code: String = ""
 
 
 func _ready() -> void:
@@ -30,9 +32,13 @@ func _ready() -> void:
 	var column := VBoxContainer.new()
 	column.add_theme_constant_override("separation", 14)
 	card.add_child(column)
-	var title := UiKit.label(UiText.TITLE, 40, UiKit.GOLD_TEXT, true)
+	column.add_child(_card_fan())
+	var title := UiKit.label(UiText.TITLE, 40, UiKit.INK, true)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	column.add_child(title)
+	var tagline := UiKit.label(UiText.TAGLINE, 16, UiKit.MUTED)
+	tagline.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	column.add_child(tagline)
 
 	_connect_box = VBoxContainer.new()
 	_connect_box.add_theme_constant_override("separation", 10)
@@ -52,9 +58,19 @@ func _ready() -> void:
 	_room_box.add_theme_constant_override("separation", 10)
 	_room_box.visible = false
 	column.add_child(_room_box)
-	_room_title = UiKit.label("", 30, UiKit.GOLD_TEXT, true)
+	var code_caption := UiKit.label(UiText.CODE_LABEL.to_upper(), 12, UiKit.GOLD_TEXT)
+	code_caption.add_theme_font_override("font", UiKit.font(false, 600, 3))
+	code_caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_room_box.add_child(code_caption)
+	_room_title = UiKit.label("", 48, UiKit.INK, true)
 	_room_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_room_title.autowrap_mode = TextServer.AUTOWRAP_OFF
 	_room_box.add_child(_room_title)
+	_copy_button = UiKit.button(UiText.COPY_CODE)
+	_copy_button.pressed.connect(func() -> void:
+			DisplayServer.clipboard_set(_code)
+			_copy_button.text = UiText.CODE_COPIED)
+	_room_box.add_child(_copy_button)
 	_members = VBoxContainer.new()
 	_room_box.add_child(_members)
 	_start_button = UiKit.button(UiText.START_MATCH)
@@ -81,14 +97,48 @@ func show_connect() -> void:
 func show_room(lobby: Dictionary, my_peer: int) -> void:
 	_connect_box.visible = false
 	_room_box.visible = true
-	_room_title.text = UiText.ROOM_CODE % lobby.code
+	_code = lobby.code
+	_room_title.text = lobby.code
+	_copy_button.text = UiText.COPY_CODE
 	UiKit.clear(_members)
 	for index in range(lobby.names.size()):
-		var line: String = "%d. %s" % [index + 1, lobby.names[index]]
-		_members.add_child(UiKit.label(line))
+		_members.add_child(_member_row(index, lobby.names[index], index == 0))
 	var is_host: bool = lobby.host == my_peer
 	_start_button.visible = is_host
 	set_status("" if is_host else UiText.WAITING_HOST)
+
+
+## A fan of three cards above the title, the lobby's decoration.
+func _card_fan() -> Control:
+	var fan := Control.new()
+	fan.custom_minimum_size = Vector2(0, 100)
+	var layout: Array = [["duque", -12.0, -70.0, 14.0], ["condessa", 0.0, 0.0, 0.0], ["capitao", 12.0, 70.0, 14.0]]
+	for entry: Array in layout:
+		var card := CardView.new(entry[0], 66)
+		card.rotation_degrees = entry[1]
+		card.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		fan.add_child(card)
+		var offset := Vector2(entry[2], entry[3])
+		fan.resized.connect(func() -> void:
+				card.position = Vector2((fan.size.x - card.size.x) / 2.0, 4) + offset)
+	return fan
+
+
+## One member of the room: avatar, name and a tag for the host (first in the list).
+func _member_row(index: int, member_name: String, is_host: bool) -> Control:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 12)
+	row.add_child(AvatarView.new(index, 44))
+	var name_label := UiKit.label(member_name, 20, UiKit.INK)
+	name_label.autowrap_mode = TextServer.AUTOWRAP_OFF
+	name_label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	row.add_child(name_label)
+	if is_host:
+		var tag := UiKit.label(UiText.HOST_TAG, 12, UiKit.GOLD_TEXT)
+		tag.autowrap_mode = TextServer.AUTOWRAP_OFF
+		tag.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		row.add_child(tag)
+	return row
 
 
 ## Shows a status or error line under the form.

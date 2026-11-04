@@ -1,12 +1,12 @@
 # Story 012: Perder influência, troca, lobby e resultado no novo estilo
 
 > **Epic**: interface-visual
-> **Status**: Ready
+> **Status**: Complete
 > **Layer**: Presentation
 > **Type**: UI
 > **Estimate**: M
 > **Manifest Version**: N/A (minimal — no control manifest)
-> **Last Updated**: —
+> **Last Updated**: 2026-11-03
 
 ## Context
 
@@ -50,9 +50,11 @@ Reuse `CardView` raised/glow/dim states. The exchange screen keeps the same inte
 
 ## Files
 
-- `src/client/influence_loss_screen.gd`, `src/client/exchange_screen.gd`, `src/client/lobby_screen.gd`, `src/client/result_screen.gd`, `src/client/table_screen.gd`, `src/client/ui_text.gd`, `src/client/preview.gd`
-
----
+- `src/client/influence_loss_screen.gd`, `src/client/exchange_screen.gd` (new)
+- `src/client/lobby_screen.gd`, `src/client/result_screen.gd` (restyled)
+- `src/client/table_screen.gd` (opens the loss/exchange screens, stopgap prompt code removed, toast pill)
+- `src/client/ui_text.gd`, `src/client/preview.gd`
+- `production/qa/evidence/story-012-influence-exchange-lobby-result/`
 
 ## QA Test Cases
 
@@ -64,7 +66,7 @@ Reuse `CardView` raised/glow/dim states. The exchange screen keeps the same inte
 
 **Story Type**: UI
 **Required evidence**: a retained screenshot of each screen touched, in `production/qa/evidence/story-012-influence-exchange-lobby-result/`
-**Status**: [ ] Not yet created
+**Status**: [x] Captured 2026-11-03 — desktop and phone: loss (none/one picked), exchange (none/complete), connect, room, result, error toast
 
 ---
 
@@ -72,3 +74,10 @@ Reuse `CardView` raised/glow/dim states. The exchange screen keeps the same inte
 
 - Depends on: `production/epics/interface-visual/story-008-new-table.md`
 - Unlocks: None
+
+## Completion Notes
+**Completed**: 2026-11-03
+**Criteria**: 8/8 passing. Button behavior checked in a live run (server plus two client processes: loss screen Revelar, exchange screen Confirmar troca, reaction Aceitar) and the copy-code button against the Windows clipboard; scratch scripts not retained.
+**Deviations**: Advisory — on phones the error toast overlaps the opponents strip; the cause of a loss by challenge was not captured (only the Golpe cause was). influence_loss_screen.gd.uid and exchange_screen.gd.uid (engine-generated) not listed under Files.
+**Test Evidence**: production/qa/evidence/story-012-influence-exchange-lobby-result/ (17 screenshots, stamped; tests waived at qa.level minimal)
+**Reviewed by**: self, no independent review

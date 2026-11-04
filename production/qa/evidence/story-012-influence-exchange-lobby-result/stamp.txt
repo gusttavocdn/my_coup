@@ -1,0 +1,7 @@
+Reviewed-Content-Hash: src/client/influence_loss_screen.gd a870936b273f59e2ed710f6dbecccf758757e370
+Reviewed-Content-Hash: src/client/exchange_screen.gd fb335c3dbe6b249e873f2b7dda939ccae7563bdf
+Reviewed-Content-Hash: src/client/lobby_screen.gd 4406f93defac23eeb55eb5fff44b413afd1dfe5f
+Reviewed-Content-Hash: src/client/result_screen.gd d5be5ec66aafa91fd3a283124f0e182d003fecf4
+Reviewed-Content-Hash: src/client/table_screen.gd 43758cc808fdeb456d066341680542f3b1298e65
+Reviewed-Content-Hash: src/client/ui_text.gd c69fea147a0101707a2a5f7352d74a0fc26c51b1
+Reviewed-Content-Hash: src/client/preview.gd 2e710e9a7fcaf65a7369ccde0fbda68525d741f9
