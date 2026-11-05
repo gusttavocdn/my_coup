@@ -1,0 +1,13 @@
+.git
+.claude
+.godot
+build
+production
+studio-tests
+prototypes
+tests
+tools
+docs
+design
+deploy
+*.md

@@ -24,19 +24,27 @@ var _room_of_peer: Dictionary = {}
 var _rng: RandomNumberGenerator
 var _clock: Callable
 var _response_seconds: float
+var _config: ServerConfig
+var _last_activity_ms: Dictionary = {}
+var _events: Array[Dictionary] = []
 
 
 ## [param clock] returns milliseconds and is shared with every room (default: the
-## engine's tick counter); [param response_seconds] is the response window length.
+## engine's tick counter); [param response_seconds] is the response window length;
+## [param config] supplies the room cap and the idle time (default limits when null).
 func _init(rng: RandomNumberGenerator, clock: Callable = Callable(),
-		response_seconds: float = RulesConfig.RESPONSE_SECONDS) -> void:
+		response_seconds: float = RulesConfig.RESPONSE_SECONDS, config: ServerConfig = null) -> void:
 	_rng = rng
 	_clock = clock if clock.is_valid() else Time.get_ticks_msec
 	_response_seconds = response_seconds
+	_config = config if config != null else ServerConfig.new()
 
 
 ## Applies [param intent] from [param peer]; see the class comment.
 func handle(peer: int, intent: Dictionary) -> Array[Dictionary]:
+	var active: Room = room_of(peer)
+	if active != null:
+		_touch(active)
 	match intent.get("type"):
 		"create_room":
 			return _create_room(peer, intent)
@@ -61,30 +69,46 @@ func disconnect_peer(peer: int) -> Array[Dictionary]:
 		return []
 	var outcome: Dictionary = room.remove(peer)
 	_room_of_peer.erase(peer)
+	_event("player_left", {"room": room.code, "peer": peer})
 	var messages: Array[Dictionary] = []
 	if outcome.aborted:
 		for member: Dictionary in room.members:
 			messages.append(_to(member.peer, {"type": "match_aborted", "reason": "player_left"}))
-			_room_of_peer.erase(member.peer)
-		_rooms.erase(room.code)
+		_close_room(room, "match_aborted")
 		return messages
 	if outcome.empty:
-		_rooms.erase(room.code)
+		_close_room(room, "empty")
 		return messages
+	_touch(room)
 	messages.append_array(_lobby_messages(room))
 	return messages
 
 
-## Lets every room's expired response window time out; returns the update
-## messages for the rooms where something happened. Call it every frame.
+## Lets every room's expired response window time out and closes idle rooms;
+## returns the update messages for the rooms where something happened. Call it
+## every frame. Members of an idle room get {"type": "match_aborted", "reason": "idle"}.
 func tick() -> Array[Dictionary]:
 	var messages: Array[Dictionary] = []
 	var now: int = int(_clock.call())
+	var idle_ms: int = _config.idle_minutes * 60 * 1000
 	for room: Room in _rooms.values():
+		if now - int(_last_activity_ms.get(room.code, now)) >= idle_ms:
+			for member: Dictionary in room.members:
+				messages.append(_to(member.peer, {"type": "match_aborted", "reason": "idle"}))
+			_close_room(room, "idle")
+			continue
 		var result: Dictionary = room.tick(now)
 		if not result.events.is_empty():
 			messages.append_array(_update_messages(room, result.events))
 	return messages
+
+
+## Returns and clears what happened since the last call, for logging:
+## [{"event": "room_created" | "room_closed" | "player_joined" | "player_left", ...fields}].
+func drain_events() -> Array[Dictionary]:
+	var drained: Array[Dictionary] = _events
+	_events = []
+	return drained
 
 
 ## The room [param peer] is in, or null.
@@ -103,12 +127,17 @@ func _create_room(peer: int, intent: Dictionary) -> Array[Dictionary]:
 		return [_error(peer, "already_in_room")]
 	if not intent.get("name") is String:
 		return [_error(peer, "invalid_intent")]
+	if _rooms.size() >= _config.max_rooms:
+		return [_error(peer, "server_busy")]
 	var room := Room.new(_new_code(), _rng, _clock, _response_seconds)
 	var joined: Dictionary = room.join(peer, intent.name)
 	if not joined.ok:
 		return [_error(peer, joined.error)]
 	_rooms[room.code] = room
 	_room_of_peer[peer] = room.code
+	_touch(room)
+	_event("room_created", {"room": room.code, "peer": peer})
+	_event("player_joined", {"room": room.code, "peer": peer, "name": intent.name})
 	return _lobby_messages(room)
 
 
@@ -124,6 +153,8 @@ func _join_room(peer: int, intent: Dictionary) -> Array[Dictionary]:
 	if not joined.ok:
 		return [_error(peer, joined.error)]
 	_room_of_peer[peer] = room.code
+	_touch(room)
+	_event("player_joined", {"room": room.code, "peer": peer, "name": intent.name})
 	return _lobby_messages(room)
 
 
@@ -190,6 +221,25 @@ func _new_code() -> String:
 		if not _rooms.has(code):
 			return code
 	return ""
+
+
+func _touch(room: Room) -> void:
+	_last_activity_ms[room.code] = int(_clock.call())
+
+
+## Removes [param room] and every membership entry that points at it.
+func _close_room(room: Room, reason: String) -> void:
+	for member: Dictionary in room.members:
+		_room_of_peer.erase(member.peer)
+	_rooms.erase(room.code)
+	_last_activity_ms.erase(room.code)
+	_event("room_closed", {"room": room.code, "reason": reason})
+
+
+func _event(event: String, fields: Dictionary) -> void:
+	var entry: Dictionary = fields.duplicate()
+	entry.event = event
+	_events.append(entry)
 
 
 func _to(peer: int, message: Dictionary) -> Dictionary:

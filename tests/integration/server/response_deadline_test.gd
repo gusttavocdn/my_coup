@@ -10,7 +10,10 @@ func _registry() -> RoomRegistry:
 	_now_ms[0] = 0
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 5
-	return RoomRegistry.new(rng, func() -> int: return _now_ms[0])
+	# Idle cleanup is covered by limits_test.gd; here the clock jumps far ahead on purpose.
+	var config := ServerConfig.new()
+	config.idle_minutes = 1000000
+	return RoomRegistry.new(rng, func() -> int: return _now_ms[0], RulesConfig.RESPONSE_SECONDS, config)
 
 
 ## A started 3-player match (peers 1..3 = seats 0..2) with seat 0 to act.

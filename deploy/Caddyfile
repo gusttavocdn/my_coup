@@ -1,0 +1,23 @@
+# Reverse proxy for the Coup Online match server: Caddy gets the HTTPS certificate
+# (automatically, for a real domain) and forwards wss:// to the server's ws://.
+# Replace play.example.com with your domain and point its DNS at this machine.
+# Caddy proxies WebSocket upgrades without extra configuration.
+#
+# Note: the server sees only Caddy's address, so max_connections_per_ip counts
+# the proxy, not the players (see docs/running-the-server.md).
+
+play.example.com {
+	# The game itself (build/web) can be served from the same host.
+	root * /srv/coup-web
+	file_server
+
+	# WebSocket upgrades (wss://play.example.com) go to the match server, which
+	# speaks plain ws:// on 9080; everything else is the static game above.
+	@websocket {
+		header Connection *Upgrade*
+		header Upgrade websocket
+	}
+	handle @websocket {
+		reverse_proxy 127.0.0.1:9080
+	}
+}

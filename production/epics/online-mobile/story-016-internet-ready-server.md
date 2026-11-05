@@ -1,12 +1,12 @@
 # Story 016: Servidor pronto para a internet: limites, configuração e implantação
 
 > **Epic**: online-mobile
-> **Status**: Ready
+> **Status**: Complete
 > **Layer**: Core
 > **Type**: Integration
 > **Estimate**: L
 > **Manifest Version**: N/A (minimal — no control manifest)
-> **Last Updated**: —
+> **Last Updated**: 2026-11-04
 
 ## Context
 
@@ -50,11 +50,17 @@ Limits belong in `RoomRegistry` and `GameServer` (pure, injectable clock) and in
 
 ## Files
 
-- `src/server/server_config.gd`, `src/server/game_server.gd`, `src/server/room_registry.gd`, `src/server/server_main.gd`
-- `Dockerfile`, `deploy/Caddyfile`, `docs/` note on running the server
-- `tests/integration/server/limits_test.gd`
-
----
+src/server/server_config.gd
+src/server/game_server.gd
+src/server/room_registry.gd
+src/server/server_main.gd
+src/client/ui_text.gd
+Dockerfile
+.dockerignore
+deploy/Caddyfile
+docs/running-the-server.md
+tests/integration/server/limits_test.gd
+tests/integration/server/response_deadline_test.gd
 
 ## QA Test Cases
 
@@ -66,7 +72,7 @@ Limits belong in `RoomRegistry` and `GameServer` (pure, injectable clock) and in
 
 **Story Type**: Integration
 **Required evidence**: `tests/integration/server/limits_test.gd` OR playtest doc; tests waived at `qa.level: minimal`, but this story's last criterion asks for them
-**Status**: [ ] Not yet created
+**Status**: [x] Created — tests/integration/server/limits_test.gd (19 tests; full suite 91/91, exit 0)
 
 ---
 
@@ -74,3 +80,12 @@ Limits belong in `RoomRegistry` and `GameServer` (pure, injectable clock) and in
 
 - Depends on: `production/epics/interface-visual/story-010-response-deadline.md`
 - Unlocks: `production/epics/online-mobile/story-017-hosting-and-publish.md`, `production/epics/online-mobile/story-018-basic-reconnection.md`
+
+---
+
+## Completion Notes
+**Completed**: 2026-11-04
+**Criteria**: 8/8 passing (criterion 6 with the SIGTERM note below)
+**Deviations**: Advisory — Godot 4.7.2 has no SIGTERM handler (verified in a container: exit 143, no close notification); the Dockerfile runs the server under tini so `docker stop` ends it in ~1 s instead of timing out and killing (exit 137). Per-IP cap counts the proxy address behind a reverse proxy (documented). Message-size limit is checked after Godot decodes the message. Out of scope but included: `.dockerignore`, `ui_text.gd` error strings, `response_deadline_test.gd` (its fake clock jumps past idle time).
+**Test Evidence**: `tests/integration/server/limits_test.gd` (19 tests; full suite 91/91, exit 0). Container build and run (non-root, healthy), live per-IP cap refusal (close 4002 + reason), Caddy validate and wss upgrade through Caddy (HTTP 101) were checked in a terminal on Docker Desktop; no retained files.
+**Reviewed by**: self, no independent review
