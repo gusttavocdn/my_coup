@@ -12,8 +12,11 @@ static func default_url() -> String:
 		var override: Variant = page_url.searchParams.get("server")
 		if override != null and not String(override).is_empty():
 			return String(override)
-		var scheme: String = "wss://" if String(location.protocol) == "https:" else "ws://"
-		return "%s%s:%d" % [scheme, String(location.hostname), GameServer.DEFAULT_PORT]
+		# Published over HTTPS the reverse proxy serves the page and the match server on
+		# the same origin (deploy/Caddyfile), so wss:// uses the page's own host and port.
+		if String(location.protocol) == "https:":
+			return "wss://%s" % String(location.host)
+		return "ws://%s:%d" % [String(location.hostname), GameServer.DEFAULT_PORT]
 	return "ws://127.0.0.1:%d" % GameServer.DEFAULT_PORT
 
 

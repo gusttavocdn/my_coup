@@ -1,23 +1,44 @@
-# Reverse proxy for the Coup Online match server: Caddy gets the HTTPS certificate
-# (automatically, for a real domain) and forwards wss:// to the server's ws://.
-# Replace play.example.com with your domain and point its DNS at this machine.
-# Caddy proxies WebSocket upgrades without extra configuration.
+# Reverse proxy for the Coup Online match server and the static web build.
+# One address serves both, so the page and wss:// share an origin: Caddy gets the
+# HTTPS certificate automatically for COUP_DOMAIN and forwards WebSocket upgrades
+# to the match server, which speaks plain ws:// on its port.
+#
+# COUP_DOMAIN is set in the .env file next to docker-compose.yml (tools/publish.sh
+# writes it). COUP_UPSTREAM defaults to the compose service "server"; set it to
+# 127.0.0.1:9080 when running Caddy on the same host as a bare server process.
 #
 # Note: the server sees only Caddy's address, so max_connections_per_ip counts
 # the proxy, not the players (see docs/running-the-server.md).
 
-play.example.com {
-	# The game itself (build/web) can be served from the same host.
-	root * /srv/coup-web
-	file_server
+{$COUP_DOMAIN} {
+	# index.wasm is 39 MB; compress it and the pck (Caddy skips wasm/octet-stream by default).
+	encode {
+		zstd
+		gzip
+		match {
+			header Content-Type application/wasm*
+			header Content-Type application/octet-stream*
+			header Content-Type text/*
+			header Content-Type application/javascript*
+			header Content-Type application/json*
+		}
+	}
 
-	# WebSocket upgrades (wss://play.example.com) go to the match server, which
-	# speaks plain ws:// on 9080; everything else is the static game above.
+	# The web build changes on every publish: always revalidate, the files carry ETags
+	# and the service worker versions its own cache.
+	header Cache-Control "no-cache"
+
 	@websocket {
 		header Connection *Upgrade*
 		header Upgrade websocket
 	}
 	handle @websocket {
-		reverse_proxy 127.0.0.1:9080
+		reverse_proxy {$COUP_UPSTREAM:server:9080}
+	}
+
+	handle {
+		# "current" is a symlink to the latest release directory (tools/publish.sh).
+		root * /srv/site/current
+		file_server
 	}
 }

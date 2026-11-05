@@ -1,0 +1,7 @@
+Reviewed-Content-Hash: src/client/server_address.gd 6f1669de3a85a0fc7b54291c731bb374ff62e8fd
+Reviewed-Content-Hash: tools/smoke_client.gd ad601585c53c908789153d0992c2aaa3fb6aab20
+Reviewed-Content-Hash: tools/smoke-check.sh cec5fc282a874298a6f3ae02dc073429f2ee74dc
+Reviewed-Content-Hash: tools/publish.sh 7ac35f722fd29f8ed3fe778647b17fac9371a2df
+Reviewed-Content-Hash: deploy/Caddyfile f9bf3a050023151353083826f109b4dd874411e4
+Reviewed-Content-Hash: deploy/docker-compose.yml 6c0233343265de59989cc783a2a870c04e884dc9
+Reviewed-Content-Hash: docs/hosting.md 4c49c4071c5e35e52c887abb497db9494ccb41d1

@@ -435,6 +435,33 @@ Sponsorships help fund time spent maintaining skills, adding new agents, keeping
 
 *Built for Claude Code. Maintained and extended — contributions welcome via [GitHub Discussions](https://github.com/Donchitos/Claude-Code-Game-Studios/discussions).*
 
+## Como jogar e instalar
+
+Esta seção é sobre o jogo **Coup Online** que este projeto constrói, não sobre o estúdio.
+
+**Endereço:** `https://SEU-DOMINIO` (troque pelo endereço real depois da publicação; veja
+[docs/hosting.md](docs/hosting.md) e [tools/publish.sh](tools/publish.sh)). Abra no
+navegador do celular ou do computador. O primeiro acesso baixa cerca de 15 MB; depois o
+jogo fica guardado no aparelho.
+
+**Instalar no Android (Chrome):** na tela inicial do jogo toque em **Instalar o jogo**
+(ou no menu ⋮ do Chrome, **Instalar app**). Ele aparece como um aplicativo na tela inicial.
+
+**Instalar no iPhone (Safari):** toque em **Compartilhar** e depois em
+**Adicionar à Tela de Início**. No iPhone só o Safari instala; o jogo mostra essa dica.
+
+**Criar uma sala:** digite o seu nome e toque em **Criar sala**. O jogo mostra um código de
+4 letras; toque nele para copiar e mande para os amigos.
+
+**Entrar em uma sala:** digite o seu nome e o código recebido e toque em **Entrar**.
+A partida é de 2 a 6 jogadores; quem criou a sala começa a partida.
+
+**Se algo falhar:** confira a conexão e recarregue a página; se aparecer "Servidor ocupado",
+tente de novo em instantes. Para rodar o servidor você mesmo, veja
+[docs/running-the-server.md](docs/running-the-server.md).
+
+---
+
 ## License
 
 MIT License. See [LICENSE](LICENSE) for details.

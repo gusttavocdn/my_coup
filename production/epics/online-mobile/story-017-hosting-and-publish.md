@@ -1,12 +1,12 @@
 # Story 017: Hospedagem e publicação: proposta, deploy e teste em celular real
 
 > **Epic**: online-mobile
-> **Status**: Ready
+> **Status**: In Progress
 > **Layer**: Release
 > **Type**: Integration
 > **Estimate**: M
 > **Manifest Version**: N/A (minimal — no control manifest)
-> **Last Updated**: —
+> **Last Updated**: 2026-11-04
 
 ## Context
 
@@ -50,10 +50,15 @@ Do not deploy before the user approves the option. Anything that creates account
 
 ## Files
 
-- `docs/hosting.md`, `README.md`, `tools/publish.*`, `tools/smoke-check.*`
-- `production/qa/playtests/` (the device test report)
-
----
+docs/hosting.md
+README.md
+tools/publish.sh
+tools/smoke-check.sh
+tools/smoke_client.gd
+deploy/Caddyfile
+deploy/docker-compose.yml
+src/client/server_address.gd
+production/qa/playtests/story-017-device-test.md
 
 ## QA Test Cases
 

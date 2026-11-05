@@ -1,0 +1,35 @@
+# Production stack on the host: the match server and Caddy (TLS, static client).
+# Run from the deploy directory (tools/publish.sh does this over SSH):
+#   docker compose up -d
+# Needs a .env file with COUP_DOMAIN (publish.sh writes it); the image
+# coup-server:latest is loaded by publish.sh (docker save | docker load).
+services:
+  server:
+    image: coup-server:latest
+    restart: unless-stopped
+    environment:
+      COUP_MAX_ROOMS: "${COUP_MAX_ROOMS:-100}"
+      COUP_MAX_CONNECTIONS: "${COUP_MAX_CONNECTIONS:-400}"
+    expose:
+      - "9080"
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    depends_on:
+      - server
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      COUP_DOMAIN: "${COUP_DOMAIN:?set COUP_DOMAIN in .env}"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./site:/srv/site:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  caddy_data:
+  caddy_config:
