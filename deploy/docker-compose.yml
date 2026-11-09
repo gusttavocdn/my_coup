@@ -22,6 +22,8 @@ services:
       - "80:80"
       - "443:443"
       - "443:443/udp"
+      # Plain HTTP for a tunnel that terminates HTTPS itself (tailscale funnel); loopback only.
+      - "127.0.0.1:8081:8081"
     environment:
       COUP_DOMAIN: "${COUP_DOMAIN:?set COUP_DOMAIN in .env}"
     volumes:

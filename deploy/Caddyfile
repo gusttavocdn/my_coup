@@ -7,10 +7,20 @@
 # writes it). COUP_UPSTREAM defaults to the compose service "server"; set it to
 # 127.0.0.1:9080 when running Caddy on the same host as a bare server process.
 #
+# A second, plain-HTTP listener on port 8081 (published on 127.0.0.1 only by the
+# compose file) serves the same content for a tunnel that already terminates HTTPS,
+# for example `tailscale funnel` (tools/lan-serve.ps1 funnel-on).
+#
 # Note: the server sees only Caddy's address, so max_connections_per_ip counts
 # the proxy, not the players (see docs/running-the-server.md).
 
-{$COUP_DOMAIN} {
+{
+	# Browsers that connect by IP address (a local-network deploy at https://192.168.0.4)
+	# send no server name; answer them with the certificate of COUP_DOMAIN.
+	default_sni {$COUP_DOMAIN}
+}
+
+(coup_site) {
 	# index.wasm is 39 MB; compress it and the pck (Caddy skips wasm/octet-stream by default).
 	encode {
 		zstd
@@ -41,4 +51,12 @@
 		root * /srv/site/current
 		file_server
 	}
+}
+
+{$COUP_DOMAIN} {
+	import coup_site
+}
+
+http://:8081 {
+	import coup_site
 }
